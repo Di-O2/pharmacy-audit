@@ -2,61 +2,58 @@ import streamlit as st
 import datetime
 import streamlit.components.v1 as components
 
-# إعدادات الصفحة
-st.set_page_config(page_title="نظام التفتيش والتقييم الصيدلاني المباشر", page_icon="🏥", layout="wide")
+# إعدادات الصفحة الرسمية
+st.set_page_config(
+    page_title="تقرير الزيارة الميدانية | إدارة الخدمات الصيدلانية", 
+    page_icon="🏥", 
+    layout="wide"
+)
 
-# استدعاء خط تجوال العربي وضبط الاتجاه لمنع تقطيع الحروف
-st.markdown("""
-    <head>
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-        <style>
-            html, body, [class*="css"], font, label, input, button {
-                font-family: 'Tajawal', sans-serif !important;
-                direction: rtl;
-                text-align: right;
-            }
-            .stMetric { text-align: right; }
-        </style>
-    </head>
-""", unsafe_allow_html=True)
-
-import streamlit as st
-import datetime
-import streamlit.components.v1 as components
-
-# إعدادات الصفحة
-st.set_page_config(page_title="نظام التفتيش والتقييم الصيدلاني المباشر", page_icon="🏥", layout="wide")
-
-# استدعاء خط تجوال العربي وضبط الاتجاه لمنع تقطيع الحروف
-st.markdown("""
-    <head>
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
-        <style>
-            html, body, [class*="css"], font, label, input, button {
-                font-family: 'Tajawal', sans-serif !important;
-                direction: rtl;
-                text-align: right;
-            }
-            .stMetric { text-align: right; }
-        </style>
-    </head>
-""", unsafe_allow_html=True)
-import streamlit as st
-import datetime
-import streamlit.components.v1 as components
-
-# إعدادات الصفحة
-st.set_page_config(page_title="نظام التفتيش الصيدلاني المباشر", page_icon="🏥", layout="wide")
-
-# تنسيق الواجهة باللغة العربية
+# ضبط الخط الافتراضي للتطبيق كاملاً إلى Calibri
 st.markdown("""
     <style>
-    body, div, h1, h2, h3, p, label { direction: rtl; text-align: right; }
-    .stMetric { text-align: right; }
+        html, body, [class*="css"], font, label, input, button, select, p, div, h1, h2, h3 {
+            font-family: 'Calibri', 'Segoe UI', 'Arial', sans-serif !important;
+            direction: rtl;
+            text-align: right;
+        }
+        .stMetric { text-align: right; }
     </style>
 """, unsafe_allow_html=True)
 
-st.title("🏥 نظام التفتيش والتقييم الصيدلاني المباشر")
+# ترويسة البانر الحكومي المعتمد (برمجة كود بدون صور)
+st.markdown("""
+    <div style="
+        background: linear-gradient(135deg, #052e24 0%, #004d40 45%, #00695c 100%);
+        border: 2px solid #d4af37;
+        border-radius: 16px;
+        padding: 25px 30px;
+        color: white;
+        font-family: 'Calibri', 'Segoe UI', Arial, sans-serif;
+        direction: rtl;
+        text-align: right;
+        margin-bottom: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+    ">
+        <div style="border-bottom: 1px solid rgba(212, 175, 55, 0.4); padding-bottom: 12px; margin-bottom: 15px;">
+            <span style="background: linear-gradient(90deg, #d4af37, #f3e5ab); color: #052e24; font-size: 15px; font-weight: bold; padding: 4px 14px; border-radius: 6px; font-family: Calibri, sans-serif;">🏛️ التجمع الصحي الثاني</span>
+            <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px; font-family: Calibri, sans-serif;">إدارة الخدمات الصيدلانية لمراكز الرعاية الصحية الأولية</div>
+            <div style="font-size: 14px; color: #a3c9bc; direction: ltr; text-align: right; font-family: Calibri, sans-serif;">Department of Pharmaceutical Services - Primary Healthcare Centers</div>
+        </div>
+        <div style="margin-bottom: 15px;">
+            <span style="font-size: 36px; font-weight: bold; color: #ffffff; font-family: Calibri, sans-serif;">تقرير الزيارة الميدانية</span>
+            <span style="font-size: 20px; font-weight: bold; color: #d4af37; direction: ltr; display: inline-block; margin-right: 15px; border-right: 2px solid rgba(255,255,255,0.3); padding-right: 15px; font-family: Calibri, sans-serif;">Field Visit Report</span>
+        </div>
+        <div style="font-size: 16px; color: #d0e8e0; margin-bottom: 15px; font-family: Calibri, sans-serif;">
+            المنصة الرقمية الموحدة لتقييم مؤشرات الامتثال الصيدلاني والتفتيش الفني المباشر.
+        </div>
+        <div>
+            <span style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 5px 14px; border-radius: 8px; font-size: 14px; font-family: Calibri, sans-serif; margin-left: 8px;">📊 تقييم امتثال فوري</span>
+            <span style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.25); color: white; padding: 5px 14px; border-radius: 8px; font-size: 14px; font-family: Calibri, sans-serif;">🖨️ تقارير PDF مباشرة</span>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
+
 st.write("قم بتعبئة النموذج الميداني أدناه للحصول على التقييم الفوري وتوليد تقرير PDF مطبوع مباشرة دون الحاجة للتعامل مع الإكسل.")
 
 st.divider()
@@ -141,7 +138,7 @@ with st.form("inspection_form"):
                     status = st.radio(
                         f"حالة البند {num}",
                         ["مطابق", "جزئي", "غير مطابق"],
-                        index=None,  # يبدأ فارغاً بدون تحديد
+                        index=None,
                         horizontal=True,
                         key=f"status_{num}",
                         label_visibility="collapsed"
@@ -208,8 +205,8 @@ if submit_btn:
     <head>
         <meta charset="UTF-8">
         <style>
-            body {{ font-family: Arial, sans-serif; padding: 20px; direction: rtl; text-align: right; }}
-            .header {{ background-color: #1A5276; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; }}
+            body {{ font-family: 'Calibri', Arial, sans-serif; padding: 20px; direction: rtl; text-align: right; }}
+            .header {{ background-color: #052e24; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-right: 6px solid #d4af37; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
             th, td {{ border: 1px solid #ddd; padding: 8px; text-align: right; }}
             th {{ background-color: #f2f2f2; }}
@@ -222,7 +219,8 @@ if submit_btn:
         <button class="print-btn" onclick="window.print()">🖨️ اضغط هنا للطباعة أو الحفظ كـ PDF</button>
         <hr>
         <div class="header">
-            <h2>🏥 تقرير التفتيش الصيدلاني الدوري</h2>
+            <p style="font-size:14px; color:#f3e5ab; margin-bottom:5px;">🏛️ التجمع الصحي الثاني - إدارة الخدمات الصيدلانية لمراكز الرعاية الصحية الأولية</p>
+            <h2>تقرير الزيارة الميدانية - Field Visit Report</h2>
             <p><strong>اسم المركز:</strong> {display_center} | <strong>المفتش الميداني:</strong> {display_inspector} | <strong>التاريخ:</strong> {inspection_date}</p>
             <p><strong>نسبة الامتثال الإجمالية:</strong> {compliance_rate:.2f}%</p>
         </div>
