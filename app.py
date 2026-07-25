@@ -3,6 +3,27 @@ import datetime
 import streamlit.components.v1 as components
 
 # إعدادات الصفحة
+st.set_page_config(page_title="نظام التفتيش والتقييم الصيدلاني المباشر", page_icon="🏥", layout="wide")
+
+# استدعاء خط تجوال العربي وضبط الاتجاه لمنع تقطيع الحروف
+st.markdown("""
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700&display=swap" rel="stylesheet">
+        <style>
+            html, body, [class*="css"], font, label, input, button {
+                font-family: 'Tajawal', sans-serif !important;
+                direction: rtl;
+                text-align: right;
+            }
+            .stMetric { text-align: right; }
+        </style>
+    </head>
+""", unsafe_allow_html=True)
+import streamlit as st
+import datetime
+import streamlit.components.v1 as components
+
+# إعدادات الصفحة
 st.set_page_config(page_title="نظام التفتيش الصيدلاني المباشر", page_icon="🏥", layout="wide")
 
 # تنسيق الواجهة باللغة العربية
