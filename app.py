@@ -18,19 +18,19 @@ st.write("قم بتعبئة النموذج الميداني أدناه للحص�
 
 st.divider()
 
-# البيانات الأساسية
+# البيانات الأساسية (فارغة)
 st.subheader("📌 البيانات الأساسية للزيارة التفتيشية")
 c1, c2, c3 = st.columns(3)
 with c1:
-    center_name = st.text_input("اسم المركز الصحي", value="مركز صحي قرطبة")
+    center_name = st.text_input("اسم المركز الصحي", value="", placeholder="أدخل اسم المركز الصحي")
 with c2:
-    inspector_name = st.text_input("اسم المفتش الميداني", value="صالحة الكربي")
+    inspector_name = st.text_input("اسم المفتش الميداني", value="", placeholder="أدخل اسم المفتش الميداني")
 with c3:
     inspection_date = st.date_input("تاريخ التفتيش", value=datetime.date.today())
 
 st.divider()
 
-# البنود الـ 38 مقسمة حسب المحاور الاربعة
+# البنود الـ 38
 items_data = [
     # محور 'رقيم' والسياسات العامة
     ("1", "محور 'رقيم' والسياسات العامة", "مطابقة الجرد الفعلي للأدوية مع النظام الإلكتروني رقيم."),
@@ -98,6 +98,7 @@ with st.form("inspection_form"):
                     status = st.radio(
                         f"حالة البند {num}",
                         ["مطابق", "جزئي", "غير مطابق"],
+                        index=None,  # يبدأ فارغاً بدون تحديد
                         horizontal=True,
                         key=f"status_{num}",
                         label_visibility="collapsed"
@@ -126,30 +127,33 @@ if submit_btn:
     unmatched_cnt = 0
     
     for r in responses:
-        if r['status'] == "مطابق":
+        st_val = r['status']
+        if st_val == "مطابق":
             total_score += 1.0
             matched_cnt += 1
-        elif r['status'] == "جزئي":
+        elif st_val == "جزئي":
             total_score += 0.5
             partial_cnt += 1
         else:
             unmatched_cnt += 1
             
     compliance_rate = (total_score / len(responses)) * 100
+    display_center = center_name if center_name.strip() else "غير محدد"
+    display_inspector = inspector_name if inspector_name.strip() else "غير محدد"
     
     st.success("تم حساب النتائج وإصدار التقرير بنجاح!")
     
     st.subheader("📊 ملخص نتائج التقييم")
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("🏥 المركز الصحي", center_name)
-    m2.metric("👨‍⚕️ المفتش الميداني", inspector_name)
+    m1.metric("🏥 المركز الصحي", display_center)
+    m2.metric("👨‍⚕️ المفتش الميداني", display_inspector)
     m3.metric("📅 تاريخ التفتيش", str(inspection_date))
     m4.metric("📈 نسبة الامتثال الإجمالية", f"{compliance_rate:.2f}%")
     
     c1, c2, c3 = st.columns(3)
     c1.success(f"✅ مطابق: {matched_cnt}")
     c2.warning(f"⚠️ جزئي: {partial_cnt}")
-    c3.error(f"❌ غير مطابق: {unmatched_cnt}")
+    c3.error(f"❌ غير مطابق / لم يحدد: {unmatched_cnt}")
     
     st.divider()
     
@@ -176,7 +180,7 @@ if submit_btn:
         <hr>
         <div class="header">
             <h2>🏥 تقرير التفتيش الصيدلاني الدوري</h2>
-            <p><strong>اسم المركز:</strong> {center_name} | <strong>المفتش الميداني:</strong> {inspector_name} | <strong>التاريخ:</strong> {inspection_date}</p>
+            <p><strong>اسم المركز:</strong> {display_center} | <strong>المفتش الميداني:</strong> {display_inspector} | <strong>التاريخ:</strong> {inspection_date}</p>
             <p><strong>نسبة الامتثال الإجمالية:</strong> {compliance_rate:.2f}%</p>
         </div>
         
@@ -187,8 +191,9 @@ if submit_btn:
         html_report += f"<h4>🔹 {sec_name}</h4><table><tr><th>م</th><th>المعيار</th><th>الحالة</th><th>ملاحظات المفتش</th></tr>"
         sec_responses = [r for r in responses if r['section'] == sec_name]
         for it in sec_responses:
-            status_class = "warning" if it['status'] == 'جزئي' else ("danger" if it['status'] == 'غير مطابق' else "")
-            html_report += f"<tr><td>{it['id']}</td><td>{it['criterion']}</td><td class='{status_class}'>{it['status']}</td><td>{it['notes']}</td></tr>"
+            st_text = it['status'] if it['status'] else "غير محدد"
+            status_class = "warning" if st_text == 'جزئي' else ("danger" if st_text in ['غير مطابق', 'غير محدد'] else "")
+            html_report += f"<tr><td>{it['id']}</td><td>{it['criterion']}</td><td class='{status_class}'>{st_text}</td><td>{it['notes']}</td></tr>"
         html_report += "</table>"
 
     html_report += "</body></html>"
