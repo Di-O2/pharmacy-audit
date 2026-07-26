@@ -4,9 +4,7 @@ import streamlit.components.v1 as components
 import requests
 import json
 
-# رابط السكربت الخاص بك والمربوط بـ Google Drive
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_6YTVDEJuDBQERUDQbHKHJB9JaUH7S__9CJdR0v2_WwlvJ1pfbjUiLSfOVm7NLYL21w/exec"
-
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTfEglyllr1fobysK2T1SZFs7GlfzvRbdX8vwAcvsj59SqJOQHGrXJAsZrrD0hk-V77A/exec"
 # إعدادات الصفحة الرسمية
 st.set_page_config(
     page_title="تقرير الزيارة الميدانية | إدارة الخدمات الصيدلانية", 
