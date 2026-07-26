@@ -4,7 +4,7 @@ import streamlit.components.v1 as components
 import requests
 import json
 
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxTfEglyllr1fobysK2T1SZFs7GlfzvRbdX8vwAcvsj59SqJOQHGrXJAsZrrD0hk-V77A/exec"
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4i_SPTPoLOZmuquFgHLxTxp2nYqAVAOfMNeOLo39tGtdsMuckOR28UIBThiwBtEe9kw/exec"
 # إعدادات الصفحة الرسمية
 st.set_page_config(
     page_title="تقرير الزيارة الميدانية | إدارة الخدمات الصيدلانية", 
