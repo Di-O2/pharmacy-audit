@@ -1,6 +1,11 @@
 import streamlit as st
 import datetime
 import streamlit.components.v1 as components
+import requests
+import json
+
+# رابط السكربت الخاص بك والمربوط بـ Google Drive
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_6YTVDEJuDBQERUDQbHKHJB9JaUH7S__9CJdR0v2_WwlvJ1pfbjUiLSfOVm7NLYL21w/exec"
 
 # إعدادات الصفحة الرسمية
 st.set_page_config(
@@ -151,7 +156,7 @@ with st.form("inspection_form"):
                         label_visibility="collapsed"
                     )
                 responses.append({
-                    'id': num,
+                    'id': int(num),
                     'section': sec_name,
                     'criterion': crit,
                     'status': status,
@@ -181,8 +186,33 @@ if submit_btn:
     display_center = center_name if center_name.strip() else "غير محدد"
     display_inspector = inspector_name if inspector_name.strip() else "غير محدد"
     
-    st.success("تم حساب النتائج وإصدار التقرير بنجاح!")
+    # حساب ملخص المحاور الأربعة إلكترونياً
+    axis_summary = {
+        "axis1": {"total": 16, "matched": sum(1 for r in responses[:16] if r['status'] == "مطابق"), "partial": sum(1 for r in responses[:16] if r['status'] == "جزئي"), "unmatched": sum(1 for r in responses[:16] if r['status'] in ["غير مطابق", None])},
+        "axis2": {"total": 8, "matched": sum(1 for r in responses[16:24] if r['status'] == "مطابق"), "partial": sum(1 for r in responses[16:24] if r['status'] == "جزئي"), "unmatched": sum(1 for r in responses[16:24] if r['status'] in ["غير مطابق", None])},
+        "axis3": {"total": 6, "matched": sum(1 for r in responses[24:30] if r['status'] == "مطابق"), "partial": sum(1 for r in responses[24:30] if r['status'] == "جزئي"), "unmatched": sum(1 for r in responses[24:30] if r['status'] in ["غير مطابق", None])},
+        "axis4": {"total": 8, "matched": sum(1 for r in responses[30:38] if r['status'] == "مطابق"), "partial": sum(1 for r in responses[30:38] if r['status'] == "جزئي"), "unmatched": sum(1 for r in responses[30:38] if r['status'] in ["غير مطابق", None])}
+    }
     
+    # إرسال البيانات الشاملة إلى Google Apps Script لإنشاء الملف بصفحتين في Google Drive
+    if GOOGLE_SCRIPT_URL:
+        payload = {
+            "center_name": display_center,
+            "inspector_name": display_inspector,
+            "inspection_date": str(inspection_date),
+            "compliance_rate": f"{compliance_rate:.2f}",
+            "matched_cnt": matched_cnt,
+            "partial_cnt": partial_cnt,
+            "unmatched_cnt": unmatched_cnt,
+            "responses": responses,
+            "axis_summary": axis_summary
+        }
+        try:
+            res = requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
+            st.success("✅ تم حفظ التقرير بصفحتين في Google Drive وإرسال رابط الملف فوراً إلى إيميل المشرف!")
+        except Exception as e:
+            st.warning("⚠️ تم حساب النتائج وتوليد التقرير المطبوع محلياً.")
+
     st.subheader("📊 ملخص نتائج التقييم")
     m1, m2, m3, m4 = st.columns(4)
     m1.metric("🏥 المركز الصحي", display_center)
