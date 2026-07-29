@@ -21,7 +21,9 @@ saudi_now = datetime.now(saudi_tz)
 
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4i_SPTPoLOZmuquFgHLxTxp2nYqAVAOfMNeOLo39tGtdsMuckOR28UIBThiwBtEe9kw/exec"
 
-# ضبط الخط الافتراضي واتجاه الصفحة RTL
+# ==========================================
+# 2. تنسيق الخطوط والألوان وإخفاء التعليمات الإنجليزية
+# ==========================================
 st.markdown(
     """
     <style>
@@ -31,17 +33,25 @@ st.markdown(
             text-align: right;
         }
         .stMetric { text-align: right; }
+        
+        /* إخفاء عبارات التعليمات الإنجليزية مثل Press Enter to submit form */
+        div[data-testid="stInputInstructions"],
+        [data-testid="InputInstructions"],
+        small[data-testid="stWidgetInstructions"] {
+            display: none !important;
+        }
     </style>
 """,
     unsafe_allow_html=True,
 )
 
 # ==========================================
-# 2. عرض الترويسة (صورة أو بانر مبرمج)
+# 3. عرض الترويسة (البحث عن الصورة أولاً ثم البانر بالأزرق الداكن)
 # ==========================================
 header_files = [
     "header.PNG",
     "header.png",
+    "HEADER.PNG",
     "header.jpg",
     "header.jpeg",
     "IMG_3602.PNG",
@@ -57,7 +67,7 @@ if not image_found:
     st.markdown(
         """
         <div style="
-            background: linear-gradient(135deg, #052e24 0%, #004d40 45%, #00695c 100%);
+            background: linear-gradient(135deg, #0b192c 0%, #1e3e62 50%, #001427 100%);
             border: 2px solid #d4af37;
             border-radius: 16px;
             padding: 25px 30px;
@@ -66,18 +76,16 @@ if not image_found:
             direction: rtl;
             text-align: right;
             margin-bottom: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.25);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
         ">
             <div style="border-bottom: 1px solid rgba(212, 175, 55, 0.4); padding-bottom: 12px; margin-bottom: 15px;">
-                <span style="background: linear-gradient(90deg, #d4af37, #f3e5ab); color: #052e24; font-size: 15px; font-weight: bold; padding: 4px 14px; border-radius: 6px; font-family: Calibri, sans-serif;">🏛️ التجمع الصحي الثاني</span>
+                <span style="background: linear-gradient(90deg, #d4af37, #f3e5ab); color: #0b192c; font-size: 15px; font-weight: bold; padding: 4px 14px; border-radius: 6px; font-family: Calibri, sans-serif;">🏛️ التجمع الصحي الثاني</span>
                 <div style="font-size: 22px; font-weight: bold; color: #ffffff; margin-top: 10px; font-family: Calibri, sans-serif;">إدارة الخدمات الصيدلانية لمراكز الرعاية الصحية الأولية</div>
-                <div style="font-size: 14px; color: #a3c9bc; direction: ltr; text-align: right; font-family: Calibri, sans-serif;">Department of Pharmaceutical Services - Primary Healthcare Centers</div>
             </div>
             <div style="margin-bottom: 15px;">
                 <span style="font-size: 36px; font-weight: bold; color: #ffffff; font-family: Calibri, sans-serif;">تقرير الزيارة الميدانية</span>
-                <span style="font-size: 20px; font-weight: bold; color: #d4af37; direction: ltr; display: inline-block; margin-right: 15px; border-right: 2px solid rgba(255,255,255,0.3); padding-right: 15px; font-family: Calibri, sans-serif;">Field Visit Report</span>
             </div>
-            <div style="font-size: 16px; color: #d0e8e0; margin-bottom: 15px; font-family: Calibri, sans-serif;">
+            <div style="font-size: 16px; color: #cbd5e1; margin-bottom: 15px; font-family: Calibri, sans-serif;">
                 المنصة الرقمية الموحدة لتقييم مؤشرات الامتثال الصيدلاني والتفتيش الفني المباشر.
             </div>
             <div>
@@ -95,7 +103,7 @@ st.write(
 st.divider()
 
 # ==========================================
-# 3. البيانات الأساسية للزيارة التفتيشية
+# 4. البيانات الأساسية للزيارة التفتيشية
 # ==========================================
 st.subheader("📌 البيانات الأساسية للزيارة التفتيشية")
 c1, c2, c3, c4 = st.columns(4)
@@ -110,8 +118,12 @@ with c2:
         placeholder="أدخل اسم المفتش الميداني",
     )
 with c3:
+    # تحديد تواريخ اليوم وما بعده فقط (يمنع التواريخ السابقة)
     inspection_date = st.date_input(
-        "تاريخ التفتيش", value=saudi_now.date(), format="YYYY/MM/DD"
+        "تاريخ التفتيش",
+        value=saudi_now.date(),
+        min_value=saudi_now.date(),
+        format="YYYY/MM/DD",
     )
 with c4:
     inspection_time = st.time_input("وقت التفتيش", value=saudi_now.time())
@@ -119,7 +131,7 @@ with c4:
 st.divider()
 
 # ==========================================
-# 4. بنود التقييم الـ 38
+# 5. بنود التقييم الـ 38
 # ==========================================
 items_data = [
     # محور 'رقيم' والسياسات العامة
@@ -358,7 +370,7 @@ with st.form("inspection_form"):
     )
 
 # ==========================================
-# 5. معالجة النتائج وإصدار التقرير
+# 6. معالجة النتائج وإصدار التقرير
 # ==========================================
 if submit_btn:
     total_score = 0.0
@@ -384,7 +396,6 @@ if submit_btn:
     )
     formatted_time_str = inspection_time.strftime("%I:%M %p")
 
-    # حساب ملخص المحاور الأربعة إلكترونياً
     axis_summary = {
         "axis1": {
             "total": 16,
@@ -442,7 +453,6 @@ if submit_btn:
         },
     }
 
-    # إرسال البيانات إلى Google Apps Script
     if GOOGLE_SCRIPT_URL:
         payload = {
             "center_name": display_center,
@@ -460,7 +470,7 @@ if submit_btn:
             res = requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
             st.success(
                 "✅ تم حفظ التقرير بصفحتين في Google Drive وإرسال رابط الملف"
-                " فوراً إلى إيميل المشرف!"
+                " فوراً!"
             )
         except Exception as e:
             st.warning("⚠️ تم حساب النتائج وتوليد التقرير المطبوع محلياً.")
@@ -491,13 +501,13 @@ if submit_btn:
         <meta charset="UTF-8">
         <style>
             body {{ font-family: 'Calibri', Arial, sans-serif; padding: 20px; direction: rtl; text-align: right; }}
-            .header {{ background-color: #052e24; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-right: 6px solid #d4af37; }}
+            .header {{ background-color: #0b192c; color: white; padding: 15px; border-radius: 8px; margin-bottom: 20px; border-right: 6px solid #d4af37; }}
             table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
             th, td {{ border: 1px solid #ddd; padding: 8px; text-align: right; }}
             th {{ background-color: #f2f2f2; }}
             .warning {{ color: #d35400; font-weight: bold; }}
             .danger {{ color: #c0392b; font-weight: bold; }}
-            .print-btn {{ background-color: #27ae60; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-bottom: 15px; }}
+            .print-btn {{ background-color: #1e3e62; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 5px; cursor: pointer; margin-bottom: 15px; }}
         </style>
     </head>
     <body>
@@ -505,7 +515,7 @@ if submit_btn:
         <hr>
         <div class="header">
             <p style="font-size:14px; color:#f3e5ab; margin-bottom:5px;">🏛️ التجمع الصحي الثاني - إدارة الخدمات الصيدلانية لمراكز الرعاية الصحية الأولية</p>
-            <h2>تقرير الزيارة الميدانية - Field Visit Report</h2>
+            <h2>تقرير الزيارة الميدانية</h2>
             <p><strong>اسم المركز:</strong> {display_center} | <strong>المفتش الميداني:</strong> {display_inspector} | <strong>التاريخ والوقت:</strong> {inspection_date.strftime('%Y/%m/%d')} - {formatted_time_str}</p>
             <p><strong>نسبة الامتثال الإجمالية:</strong> {compliance_rate:.2f}%</p>
         </div>
@@ -535,7 +545,7 @@ if submit_btn:
     components.html(html_report, height=700, scrolling=True)
 
 # ==========================================
-# 6. تذييل الصفحة الرسمي
+# 7. تذييل الصفحة الرسمي
 # ==========================================
 st.markdown("---")
 st.caption(
