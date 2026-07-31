@@ -21,6 +21,7 @@ saudi_now = datetime.now(saudi_tz)
 
 # رابط Google Apps Script المعتمد
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/# ==========================================
+# ==========================================
 # 2. تنسيق الخطوط وإخفاء الشريط السفلي والعلوي بالكامل
 # ==========================================
 st.markdown(
@@ -77,6 +78,7 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
+
 # ==========================================
 # 3. عرض الترويسة (البحث عن الصورة أولاً ثم البانر بالأزرق الداكن)
 # ==========================================
