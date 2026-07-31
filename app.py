@@ -19,27 +19,45 @@ st.set_page_config(
 saudi_tz = zoneinfo.ZoneInfo("Asia/Riyadh")
 saudi_now = datetime.now(saudi_tz)
 
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx4i_SPTPoLOZmuquFgHLxTxp2nYqAVAOfMNeOLo39tGtdsMuckOR28UIBThiwBtEe9kw/exec"
+# رابط Google Apps Script المعتمد
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
 
 # ==========================================
-# 2. تنسيق الخطوط والألوان وإخفاء التعليمات الإنجليزية
+# 2. تنسيق الخطوط وإخفاء الشريط العلوي والأيقونات العائمة
 # ==========================================
 st.markdown(
     """
     <style>
+        /* 1. إخفاء الشريط العلوي بالكامل (Fork, GitHub Icon, MainMenu) */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+        #MainMenu { visibility: hidden; }
+        footer { visibility: hidden; }
+
+        /* 2. إخفاء الشارات والأيقونات العائمة في أسفل الشاشة */
+        div[class*="viewerBadge"],
+        div[class*="styles_viewerBadge"],
+        [data-testid="stStatusWidget"],
+        .stAppDeployButton {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* 3. إخفاء عبارات التعليمات الإنجليزية مثل Press Enter to submit form */
+        div[data-testid="stInputInstructions"],
+        [data-testid="InputInstructions"],
+        small[data-testid="stWidgetInstructions"] {
+            display: none !important;
+        }
+
+        /* 4. إعدادات الخطوط والاتجاه من اليمين لليسار */
         html, body, [class*="css"], font, label, input, button, select, p, div, h1, h2, h3 {
             font-family: 'Calibri', 'Segoe UI', 'Arial', sans-serif !important;
             direction: rtl;
             text-align: right;
         }
         .stMetric { text-align: right; }
-        
-        /* إخفاء عبارات التعليمات الإنجليزية مثل Press Enter to submit form */
-        div[data-testid="stInputInstructions"],
-        [data-testid="InputInstructions"],
-        small[data-testid="stWidgetInstructions"] {
-            display: none !important;
-        }
     </style>
 """,
     unsafe_allow_html=True,
@@ -118,7 +136,7 @@ with c2:
         placeholder="أدخل اسم المفتش الميداني",
     )
 with c3:
-    # تحديد تواريخ اليوم وما بعده فقط (يمنع التواريخ السابقة)
+    # يمنع اختيار أي تاريخ سابق (اليوم وما بعده فقط)
     inspection_date = st.date_input(
         "تاريخ التفتيش",
         value=saudi_now.date(),
