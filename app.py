@@ -20,15 +20,13 @@ saudi_tz = zoneinfo.ZoneInfo("Asia/Riyadh")
 saudi_now = datetime.now(saudi_tz)
 
 # رابط Google Apps Script المعتمد
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
-
-# ==========================================
-# 2. تنسيق الخطوط وإخفاء جميع الشارات والأيقونات العائمة
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/# ==========================================
+# 2. تنسيق الخطوط وإخفاء الشريط السفلي والعلوي بالكامل
 # ==========================================
 st.markdown(
     """
     <style>
-        /* 1. إخفاء الشريط العلوي والمنيو والهيدر بالكامل */
+        /* 1. إخفاء الشريط العلوي والهيدر والمنيو */
         header[data-testid="stHeader"],
         div[data-testid="stHeader"],
         div[data-testid="stToolbar"],
@@ -40,26 +38,28 @@ st.markdown(
             height: 0 !important;
         }
 
-        /* 2. إخفاء العلامتين العائمة (الشعار الأحمر + صورة الحساب) */
+        /* 2. إخفاء الشريط السفلي كاملاً (Created by + Hosted with Streamlit) */
         div[class*="viewerBadge"],
-        div[class*="styles_viewerBadge"],
         div[class*="viewerBadge_container"],
-        div[class*="StatusWidget"],
+        div[class*="styles_viewerBadge"],
+        div[class*="StyledAppViewerFooter"],
+        div[class*="stAppFooter"],
+        div[class*="AppViewerFooter"],
         [data-testid="stStatusWidget"],
+        [data-testid="stBottom"],
         .stAppDeployButton,
         a[href*="streamlit.io"],
         a[aria-label*="Streamlit"],
-        div[class*="Floating"],
-        div[class*="floating"] {
+        div:has(> a[href*="streamlit.io"]) {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
             pointer-events: none !important;
-            width: 0 !important;
             height: 0 !important;
+            width: 0 !important;
         }
 
-        /* 3. إخفاء تعليمات الإدخال باللغة الإنجليزية */
+        /* 3. إخفاء عبارات التعليمات الإنجليزية */
         div[data-testid="stInputInstructions"],
         [data-testid="InputInstructions"],
         small[data-testid="stWidgetInstructions"] {
@@ -77,7 +77,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
 # ==========================================
 # 3. عرض الترويسة (البحث عن الصورة أولاً ثم البانر بالأزرق الداكن)
 # ==========================================
