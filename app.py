@@ -23,36 +23,37 @@ saudi_now = datetime.now(saudi_tz)
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
 
 # ==========================================
-# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي بالكامل
+# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي والشارات بالكامل
 # ==========================================
 st.markdown(
     """
     <style>
         /* 1. إخفاء الشريط العلوي والمنيو والهيدر بالكامل */
-        header[data-testid="stHeader"],
-        div[data-testid="stHeader"],
-        div[data-testid="stToolbar"],
-        div[data-testid="stDecoration"],
-        #MainMenu,
-        footer {
+        header, footer, #MainMenu, 
+        [data-testid="stHeader"], 
+        [data-testid="stFooter"], 
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"] {
             display: none !important;
             visibility: hidden !important;
             height: 0 !important;
         }
 
-        /* 2. إخفاء جميع الشارات والأيقونات والشريط السفلي (Hosted with Streamlit / Created by) */
+        /* 2. إخفاء الحاوية السفلية الشاملة والشارات العائمة (Hosted with Streamlit / Created by) */
+        [data-testid="stBottom"],
+        [data-testid="stBottomBlockContainer"],
+        [data-testid="stStatusWidget"],
+        .stAppDeployButton,
         div[class*="viewerBadge"],
         div[class*="viewerBadge_container"],
         div[class*="styles_viewerBadge"],
         div[class*="StyledAppViewerFooter"],
-        div[class*="stAppFooter"],
         div[class*="AppViewerFooter"],
-        [data-testid="stStatusWidget"],
-        [data-testid="stBottom"],
-        .stAppDeployButton,
+        div[class*="stAppFooter"],
         a[href*="streamlit.io"],
         a[aria-label*="Streamlit"],
-        div:has(> a[href*="streamlit.io"]) {
+        div:has(> a[href*="streamlit.io"]),
+        div:has(> [class*="viewerBadge"]) {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -515,7 +516,7 @@ if submit_btn:
                     "⚠️ تم حساب النتائج وتوليد التقرير محلياً (استجابة"
                     f" السكريبت: {res.status_code})."
                 )
-        except Exception as e:
+        except Exception:
             st.warning("⚠️ تم حساب النتائج وتوليد التقرير المطبوع محلياً.")
 
     st.subheader("📊 ملخص نتائج التقييم")
