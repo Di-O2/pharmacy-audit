@@ -28,31 +28,31 @@ GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZm08M6lDJVyWzVV7E
 st.markdown(
     """
     <style>
-        /* 1. إخفاء الشريط العلوي والمنيو والهيدر بالكامل */
-        header[data-testid="stHeader"],
-        div[data-testid="stHeader"],
-        div[data-testid="stToolbar"],
-        div[data-testid="stDecoration"],
-        #MainMenu,
-        footer {
+        /* 1. إخفاء الهيدر والشريط العلوي والمنيو */
+        header, footer, #MainMenu, 
+        [data-testid="stHeader"], 
+        [data-testid="stFooter"], 
+        [data-testid="stToolbar"],
+        [data-testid="stDecoration"] {
             display: none !important;
             visibility: hidden !important;
             height: 0 !important;
         }
 
-        /* 2. إخفاء جميع الشارات والأيقونات والشريط السفلي (Hosted with Streamlit / Created by) */
+        /* 2. إخفاء الشريط السفلي وشارات Streamlit Cloud بالكامل (Created by / Hosted with Streamlit) */
         div[class*="viewerBadge"],
-        div[class*="viewerBadge_container"],
         div[class*="styles_viewerBadge"],
         div[class*="StyledAppViewerFooter"],
-        div[class*="stAppFooter"],
         div[class*="AppViewerFooter"],
+        div[class*="stAppFooter"],
+        div[class*="st-emotion-cache"],
         [data-testid="stStatusWidget"],
         [data-testid="stBottom"],
         .stAppDeployButton,
         a[href*="streamlit.io"],
         a[aria-label*="Streamlit"],
-        div:has(> a[href*="streamlit.io"]) {
+        div:has(> a[href*="streamlit.io"]),
+        div:has(> [class*="viewerBadge"]) {
             display: none !important;
             visibility: hidden !important;
             opacity: 0 !important;
@@ -79,7 +79,6 @@ st.markdown(
 """,
     unsafe_allow_html=True,
 )
-
 # ==========================================
 # 3. عرض الترويسة (البحث عن الصورة أولاً ثم البانر بالأزرق الداكن)
 # ==========================================
