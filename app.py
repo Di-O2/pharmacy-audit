@@ -19,8 +19,8 @@ st.set_page_config(
 saudi_tz = zoneinfo.ZoneInfo("Asia/Riyadh")
 saudi_now = datetime.now(saudi_tz)
 
-# رابط Google Apps Script المعتمد
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
+# رابط Google Apps Script المعتمد (على سطر واحد كامل)
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
 
 # ==========================================
 # 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي بالكامل
@@ -498,11 +498,23 @@ if submit_btn:
             "axis_summary": axis_summary,
         }
         try:
-            res = requests.post(GOOGLE_SCRIPT_URL, json=payload, timeout=10)
-            st.success(
-                "✅ تم حفظ التقرير بصفحتين في Google Drive وإرسال رابط الملف"
-                " فوراً!"
+            headers = {"Content-Type": "application/json"}
+            res = requests.post(
+                GOOGLE_SCRIPT_URL,
+                data=json.dumps(payload),
+                headers=headers,
+                timeout=30,
             )
+            if res.status_code in [200, 302]:
+                st.success(
+                    "✅ تم حفظ التقرير بصفحتين في Google Drive وإرسال رابط"
+                    " الملف فوراً!"
+                )
+            else:
+                st.warning(
+                    "⚠️ تم حساب النتائج وتوليد التقرير محلياً (استجابة"
+                    f" السكريبت: {res.status_code})."
+                )
         except Exception as e:
             st.warning("⚠️ تم حساب النتائج وتوليد التقرير المطبوع محلياً.")
 
