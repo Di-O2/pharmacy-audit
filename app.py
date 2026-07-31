@@ -20,14 +20,15 @@ saudi_tz = zoneinfo.ZoneInfo("Asia/Riyadh")
 saudi_now = datetime.now(saudi_tz)
 
 # رابط Google Apps Script المعتمد
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/# ==========================================
+GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
+
 # ==========================================
-# 2. تنسيق الخطوط وإخفاء الشريط السفلي والعلوي بالكامل
+# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي بالكامل
 # ==========================================
 st.markdown(
     """
     <style>
-        /* 1. إخفاء الشريط العلوي والهيدر والمنيو */
+        /* 1. إخفاء الشريط العلوي والمنيو والهيدر بالكامل */
         header[data-testid="stHeader"],
         div[data-testid="stHeader"],
         div[data-testid="stToolbar"],
@@ -39,7 +40,7 @@ st.markdown(
             height: 0 !important;
         }
 
-        /* 2. إخفاء الشريط السفلي كاملاً (Created by + Hosted with Streamlit) */
+        /* 2. إخفاء جميع الشارات والأيقونات والشريط السفلي (Hosted with Streamlit / Created by) */
         div[class*="viewerBadge"],
         div[class*="viewerBadge_container"],
         div[class*="styles_viewerBadge"],
@@ -60,7 +61,7 @@ st.markdown(
             width: 0 !important;
         }
 
-        /* 3. إخفاء عبارات التعليمات الإنجليزية */
+        /* 3. إخفاء تعليمات الإدخال الإنجليزية */
         div[data-testid="stInputInstructions"],
         [data-testid="InputInstructions"],
         small[data-testid="stWidgetInstructions"] {
@@ -168,7 +169,6 @@ st.divider()
 # 5. بنود التقييم الـ 38
 # ==========================================
 items_data = [
-    # محور 'رقيم' والسياسات العامة
     (
         "1",
         "محور 'رقيم' والسياسات العامة",
@@ -242,7 +242,6 @@ items_data = [
         "محور 'رقيم' والسياسات العامة",
         "توفر مؤشرات واستمارة اكتمال الوصفة الطبية ومؤشر الهدف الثالث.",
     ),
-    # محور غرفة الأدوية والصيدلية وغرفة الطوارئ
     (
         "17",
         "محور غرفة الأدوية والصيدلية وغرفة الطوارئ",
@@ -284,7 +283,6 @@ items_data = [
         "محور غرفة الأدوية والصيدلية وغرفة الطوارئ",
         "فصل الأدوية عن المواد الكيميائية وأدوات النظافة.",
     ),
-    # الثلاجة الطبية
     (
         "25",
         "الثلاجة الطبية",
@@ -314,7 +312,6 @@ items_data = [
         " بها.",
     ),
     ("30", "الثلاجة الطبية", "فصل الادوية عن اللقاحات والأمصال."),
-    # محور عربة الطوارئ والحقيبة الإسعافية
     (
         "31",
         "محور عربة الطوارئ والحقيبة الإسعافية",
