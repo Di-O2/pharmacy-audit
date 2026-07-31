@@ -23,35 +23,50 @@ saudi_now = datetime.now(saudi_tz)
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbZm08M6lDJVyWzVV7ENc9rHoXd_j2IzK-J_GxNOoqgvHmIvHDzjbNB4Q3RlADCySYd/exec"
 
 # ==========================================
-# 2. تنسيق الخطوط وإخفاء الشريط العلوي والأيقونات العائمة
+# 2. تنسيق الخطوط وإخفاء جميع الشارات والأيقونات العائمة
 # ==========================================
 st.markdown(
     """
     <style>
-        /* 1. إخفاء الشريط العلوي بالكامل (Fork, GitHub Icon, MainMenu) */
-        header[data-testid="stHeader"] {
-            display: none !important;
-        }
-        #MainMenu { visibility: hidden; }
-        footer { visibility: hidden; }
-
-        /* 2. إخفاء الشارات والأيقونات العائمة في أسفل الشاشة */
-        div[class*="viewerBadge"],
-        div[class*="styles_viewerBadge"],
-        [data-testid="stStatusWidget"],
-        .stAppDeployButton {
+        /* 1. إخفاء الشريط العلوي والمنيو والهيدر بالكامل */
+        header[data-testid="stHeader"],
+        div[data-testid="stHeader"],
+        div[data-testid="stToolbar"],
+        div[data-testid="stDecoration"],
+        #MainMenu,
+        footer {
             display: none !important;
             visibility: hidden !important;
+            height: 0 !important;
         }
 
-        /* 3. إخفاء عبارات التعليمات الإنجليزية مثل Press Enter to submit form */
+        /* 2. إخفاء العلامتين العائمة (الشعار الأحمر + صورة الحساب) */
+        div[class*="viewerBadge"],
+        div[class*="styles_viewerBadge"],
+        div[class*="viewerBadge_container"],
+        div[class*="StatusWidget"],
+        [data-testid="stStatusWidget"],
+        .stAppDeployButton,
+        a[href*="streamlit.io"],
+        a[aria-label*="Streamlit"],
+        div[class*="Floating"],
+        div[class*="floating"] {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            width: 0 !important;
+            height: 0 !important;
+        }
+
+        /* 3. إخفاء تعليمات الإدخال باللغة الإنجليزية */
         div[data-testid="stInputInstructions"],
         [data-testid="InputInstructions"],
         small[data-testid="stWidgetInstructions"] {
             display: none !important;
         }
 
-        /* 4. إعدادات الخطوط والاتجاه من اليمين لليسار */
+        /* 4. ضبط الخطوط والاتجاه من اليمين لليسار */
         html, body, [class*="css"], font, label, input, button, select, p, div, h1, h2, h3 {
             font-family: 'Calibri', 'Segoe UI', 'Arial', sans-serif !important;
             direction: rtl;
