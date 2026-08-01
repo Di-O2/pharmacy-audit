@@ -20,7 +20,7 @@ saudi_tz = zoneinfo.ZoneInfo("Asia/Riyadh")
 saudi_now = datetime.now(saudi_tz)
 
 # رابط Google Apps Script المعتمد (على سطر واحد كامل)
-GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNy4Qg00mtVb-1C_f0k6nYvUuSWT9hyRpEqkhRb5gZQZZe0Hulq2fJP0-4guc8OichOQ/exec"
+https://script.google.com/macros/s/AKfycby3btW1y6OzmoBRjwKSKZvJyz7BA910AFGTJcZKSqkCK5k4-IEhQ4xzVly7CRMUub1X8g/exec
 
 # ==========================================
 # 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي والشارات بالكامل
