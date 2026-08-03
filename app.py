@@ -22,33 +22,34 @@ saudi_now = datetime.now(saudi_tz)
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNVcGm7Ct1YiI9ZxXziNHyTKjpkOTkthkkaD1JvyY1DL4airewyogDV727XUweCLXJ/exec"
 
 # ==========================================
-# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي والشارات بالكامل
+# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي والشارات بالكامل (محدث للجوال)
 # ==========================================
 st.markdown(
     """
     <style>
-        /* 1. إخفاء الشريط العلوي والمنيو والهيدر بالكامل */
+        /* 1. إخفاء الشريط العلوي والمنيو والهيدر والفوتر */
         header, footer, #MainMenu, 
         [data-testid="stHeader"], 
         [data-testid="stFooter"], 
         [data-testid="stToolbar"],
-        [data-testid="stDecoration"] {
+        [data-testid="stDecoration"],
+        [data-testid="stStatusWidget"],
+        [data-testid="stBottom"],
+        [data-testid="stBottomBlockContainer"] {
             display: none !important;
             visibility: hidden !important;
             height: 0 !important;
         }
 
-        /* 2. إخفاء الحاوية السفلية الشاملة والشارات العائمة (Hosted with Streamlit / Created by) */
-        [data-testid="stBottom"],
-        [data-testid="stBottomBlockContainer"],
-        [data-testid="stStatusWidget"],
-        .stAppDeployButton,
+        /* 2. إخفاء الشارات العائمة الحالية والمستقبلية (Hosted with Streamlit / Created by) */
         div[class*="viewerBadge"],
         div[class*="viewerBadge_container"],
         div[class*="styles_viewerBadge"],
         div[class*="StyledAppViewerFooter"],
         div[class*="AppViewerFooter"],
         div[class*="stAppFooter"],
+        .stAppDeployButton,
+        .stAppFooter,
         a[href*="streamlit.io"],
         a[aria-label*="Streamlit"],
         div:has(> a[href*="streamlit.io"]),
@@ -61,14 +62,24 @@ st.markdown(
             width: 0 !important;
         }
 
-        /* 3. إخفاء تعليمات الإدخال الإنجليزية */
+        /* 3. إخفاء أي عناصر عائمة مثبتة في أسفل الشاشة على الجوال */
+        div[style*="position: fixed"][style*="bottom"],
+        div[style*="position: fixed"][style*="bottom: 0px"],
+        div[style*="position: fixed"][style*="bottom: 0"],
+        div[style*="bottom: 0px"],
+        div[style*="bottom: 0"] {
+            display: none !important;
+            visibility: hidden !important;
+        }
+
+        /* 4. إخفاء تعليمات الإدخال الإنجليزية */
         div[data-testid="stInputInstructions"],
         [data-testid="InputInstructions"],
         small[data-testid="stWidgetInstructions"] {
             display: none !important;
         }
 
-        /* 4. ضبط الخطوط والاتجاه من اليمين لليسار */
+        /* 5. ضبط الخطوط والاتجاه من اليمين لليسار */
         html, body, [class*="css"], font, label, input, button, select, p, div, h1, h2, h3 {
             font-family: 'Calibri', 'Segoe UI', 'Arial', sans-serif !important;
             direction: rtl;
