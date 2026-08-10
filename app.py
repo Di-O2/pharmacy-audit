@@ -22,7 +22,7 @@ saudi_now = datetime.now(saudi_tz)
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwNVcGm7Ct1YiI9ZxXziNHyTKjpkOTkthkkaD1JvyY1DL4airewyogDV727XUweCLXJ/exec"
 
 # ==========================================
-# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي والشارات بالكامل (محدث للجوال)
+# 2. تنسيق الخطوط وإخفاء الشريط العلوي والسفلي والشارات بالكامل
 # ==========================================
 st.markdown(
     """
@@ -149,10 +149,10 @@ st.write(
 st.divider()
 
 # ==========================================
-# 4. البيانات الأساسية للزيارة التفتيشية
+# 4. البيانات الأساسية للزيارة التفتيشية (3 أعمدة بدلاً من 4)
 # ==========================================
 st.subheader("📌 البيانات الأساسية للزيارة التفتيشية")
-c1, c2, c3, c4 = st.columns(4)
+c1, c2, c3 = st.columns(3)
 with c1:
     center_name = st.text_input(
         "اسم المركز الصحي", value="", placeholder="أدخل اسم المركز الصحي"
@@ -171,8 +171,6 @@ with c3:
         min_value=saudi_now.date(),
         format="YYYY/MM/DD",
     )
-with c4:
-    inspection_time = st.time_input("وقت التفتيش", value=saudi_now.time())
 
 st.divider()
 
@@ -436,7 +434,10 @@ if submit_btn:
     display_inspector = (
         inspector_name if inspector_name.strip() else "غير محدد"
     )
-    formatted_time_str = inspection_time.strftime("%I:%M %p")
+    
+    # التقاط الوقت الحالي آلياً بتوقيت السعودية لحظة إرسال التقرير
+    current_saudi_time = datetime.now(saudi_tz)
+    formatted_time_str = current_saudi_time.strftime("%I:%M %p")
 
     axis_summary = {
         "axis1": {
