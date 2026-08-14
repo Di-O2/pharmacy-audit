@@ -2,8 +2,8 @@ name: Keep Streamlit Alive
 
 on:
   schedule:
-    - cron: '0 0 */3 * *'
-  workflow_dispatch:
+    - cron: '0 0 * * *'  # يتم التنفيذ تلقائياً يومياً
+  workflow_dispatch:     # يتيح لك تشغيله يدوياً بأي وقت
 
 permissions:
   contents: write
@@ -13,11 +13,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Auto Update
         run: |
           date > keepalive.txt
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add keepalive.txt
-          git commit -m "Keep alive Streamlit" || exit 0
+          git commit -m "Keep alive Streamlit daily" || exit 0
+          git pull --rebase origin main || exit 0
           git push
