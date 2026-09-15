@@ -358,20 +358,46 @@ if submit_btn:
             "responses": responses,
             "axis_summary": axis_summary,
         }
-        try:
-            headers = {"Content-Type": "application/json"}
-            res = requests.post(
-                GOOGLE_SCRIPT_URL,
-                data=json.dumps(payload),
-                headers=headers,
-                timeout=30,
-            )
-            if res.status_code in [200, 302]:
-                st.success("✅ تم حفظ التقرير في Google Drive وإرسال التقرير فوراً!")
-            else:
-                st.warning(f"⚠️ استجابة السكريبت: {res.status_code}")
-        except Exception:
-            st.warning("⚠️ تم حساب النتائج وتوليد التقرير محلياً.")
+        
+        # مؤشر انتظار احترافي مع زيادة مهلة الشبكة لمنع تعليق المتصفح
+        with st.spinner("⏳ جاري توليد التقرير التنفيذي، والأرشفة في قوقل درايف، وإرسال الإشعار البريدي... يُرجى الانتظار ثوانٍ"):
+            try:
+                headers = {"Content-Type": "application/json"}
+                res = requests.post(
+                    GOOGLE_SCRIPT_URL,
+                    data=json.dumps(payload),
+                    headers=headers,
+                    timeout=60,
+                )
+                if res.status_code in [200, 302]:
+                    res_data = {}
+                    try:
+                        res_data = res.json()
+                    except Exception:
+                        pass
+
+                    file_url = res_data.get("center_file_url")
+                    st.success("🎉 تم اعتماد التفتيش وتوليد التقرير الميداني بنجاح تام!")
+                    st.balloons()
+
+                    if file_url:
+                        st.markdown(
+                            f"""
+                            <div style="background:#ECFDF5; border:1px solid #10B981; border-radius:10px; padding:15px; text-align:center; margin-top:12px; margin-bottom:15px;">
+                                <span style="color:#065F46; font-weight:bold; font-size:16px;">تم إيداع التقرير في قوقل درايف بنجاح ✅</span><br><br>
+                                <a href="{file_url}" target="_blank" style="display:inline-block; padding:10px 24px; background:#10B981; color:#FFFFFF; text-decoration:none; border-radius:8px; font-weight:bold; font-size:14px;">
+                                    📄 فتح التقرير المعتمد للمركز في قوقل درايف
+                                </a>
+                            </div>
+                            """,
+                            unsafe_allow_html=True,
+                        )
+                else:
+                    st.warning(f"⚠️ استجابة السكريبت: رمز الحالة {res.status_code}")
+            except requests.exceptions.Timeout:
+                st.warning("⚠️ استغرق إنشاء التقرير وقتاً أطول من المعتاد بسبب ضغط خوادم قوقل، والعملية جارية في الخلفية. يرجى مراجعة بريدك الإلكتروني.")
+            except Exception as e:
+                st.error(f"❌ حدث خطأ أثناء الاتصال: {e}")
 
     st.subheader("📊 ملخص نتائج التقييم")
     m1, m2, m3, m4 = st.columns(4)
