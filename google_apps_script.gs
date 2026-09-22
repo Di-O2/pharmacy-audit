@@ -1,6 +1,6 @@
 // =============================================================================
 // سكريبت المنصة الرقمية المعتمد - نظام الزيارات الميدانية لقسم الصيدلة
-// الإصدار المصحح: 39 بنداً، حالة يوجد / لا يوجد، منع التكرار، وإيميل عربي باتجاه صحيح
+// الإصدار المصحح: أرشيف + سجل الزيارات كمرجع، وعنوان رسالة مرتب
 // =============================================================================
 
 var TEMPLATE_FILE_ID = "1QBq_OUsbNsc3lklC8_tvFAygRhlaT7MKZ6yMyiyLkNw";
@@ -76,6 +76,8 @@ function doPost(e) {
       hyperlinkFormula,
       data.request_id || ""
     ]);
+
+    logVisitReference(masterSs, data, centerFileUrl);
 
     sendApprovedEmailReport(data, centerFileUrl);
 
@@ -232,10 +234,7 @@ function createCustomCenterReport(data) {
   var newFile = templateFile.makeCopy(fileName, targetFolder);
   var newSpreadsheet = SpreadsheetApp.open(newFile);
 
-  var archiveInCopy = newSpreadsheet.getSheetByName("الأرشيف");
-  if (archiveInCopy && newSpreadsheet.getSheets().length > 1) {
-    newSpreadsheet.deleteSheet(archiveInCopy);
-  }
+  removeReferenceSheetsFromCopy(newSpreadsheet);
 
   var sheet1 = newSpreadsheet.getSheetByName("تقرير الزيارة الميدانية") || newSpreadsheet.getSheets()[0];
   sheet1.setRightToLeft(true);
@@ -459,13 +458,76 @@ function appendNearExpiryChecklistRow(sheet2, item39) {
   ]]);
 }
 
+function removeReferenceSheetsFromCopy(newSpreadsheet) {
+  var referenceNames = ["الأرشيف", "الزيارات"];
+  for (var i = 0; i < referenceNames.length; i++) {
+    var refSheet = newSpreadsheet.getSheetByName(referenceNames[i]);
+    if (refSheet && newSpreadsheet.getSheets().length > 1) {
+      newSpreadsheet.deleteSheet(refSheet);
+    }
+  }
+}
+
+function ensureSheetWithHeaders(ss, sheetName, headers) {
+  var sheet = ss.getSheetByName(sheetName);
+  if (!sheet) {
+    sheet = ss.insertSheet(sheetName);
+  }
+  sheet.setRightToLeft(true);
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(headers);
+    sheet.getRange(1, 1, 1, headers.length)
+      .setFontWeight("bold")
+      .setBackground("#1F4E79")
+      .setFontColor("#FFFFFF");
+  }
+  return sheet;
+}
+
+function logVisitReference(masterSs, data, centerFileUrl) {
+  var visitsSheet = ensureSheetWithHeaders(masterSs, "الزيارات", [
+    "اسم المركز",
+    "تاريخ الزيارة",
+    "نسبة الامتثال",
+    "اسم المفتش الميداني",
+    "وقت الزيارة",
+    "رابط التقرير المعتمد",
+    "تاريخ التسجيل",
+    "معرف الطلب"
+  ]);
+
+  var hyperlinkFormula = '=HYPERLINK("' + centerFileUrl + '", "عرض تقرير المركز 📄")';
+  visitsSheet.appendRow([
+    data.center_name || "غير محدد",
+    data.inspection_date || "-",
+    (data.compliance_rate || "0") + "%",
+    data.inspector_name || "غير محدد",
+    data.inspection_time || "-",
+    hyperlinkFormula,
+    new Date(),
+    data.request_id || ""
+  ]);
+}
+
+function buildEmailSubject(data) {
+  var centerName = data.center_name || "غير محدد";
+  var inspectionDate = data.inspection_date || "-";
+  var complianceRate = data.compliance_rate || "0";
+  return (
+    "\u200Fاسم المركز : " + centerName +
+    "                   تاريخ الزيارة : " + inspectionDate +
+    "                       نسبة الامتثال : " + complianceRate + "%"
+  );
+}
+
 function sendApprovedEmailReport(data, centerFileUrl) {
   var recipientEmail = RECIPIENT_EMAIL;
   var inspectorName = data.inspector_name || "غير محدد";
   var centerName = data.center_name || "غير محدد";
+  var inspectionDate = data.inspection_date || "-";
   var complianceRate = data.compliance_rate || "0";
   var generalNotes = data.general_notes ? data.general_notes : "لا توجد ملاحظات عامة مسجلة.";
-  var subject = "\u200Fتقرير تقييم جديد: " + inspectorName + " - اسم المركز: " + centerName + " - نسبة الامتثال: " + complianceRate + "%";
+  var subject = buildEmailSubject(data);
 
   var itemsDetailsHtml = "";
   var itemsDetailsText = "";
@@ -485,9 +547,10 @@ function sendApprovedEmailReport(data, centerFileUrl) {
   var bodyText =
     "تم اعتماد تقرير الزيارة الميدانية عبر المنصة الرقمية:\n\n" +
     "البيانات الأساسية:\n" +
-    "• المركز الصحي: " + centerName + "\n" +
-    "• تاريخ التفتيش: " + (data.inspection_date || "-") + "\n" +
-    "• نسبة الامتثال الإجمالية: " + complianceRate + "%\n\n" +
+    "• اسم المركز: " + centerName + "\n" +
+    "• تاريخ الزيارة: " + inspectionDate + "\n" +
+    "• نسبة الامتثال: " + complianceRate + "%\n" +
+    "• اسم المُفتش الميداني: " + inspectorName + "\n\n" +
     "ملخص النتائج:\n" +
     "• عدد البنود المطابقة: " + (data.matched_cnt || 0) + "\n" +
     "• عدد البنود الجزئية: " + (data.partial_cnt || 0) + "\n" +
@@ -504,9 +567,10 @@ function sendApprovedEmailReport(data, centerFileUrl) {
     '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;text-align:right;line-height:1.8;font-size:15px;">' +
     "<p>تم اعتماد تقرير الزيارة الميدانية عبر المنصة الرقمية.</p>" +
     "<p><strong>البيانات الأساسية</strong><br>" +
-    "• المركز الصحي: " + escapeHtml(centerName) + "<br>" +
-    "• تاريخ التفتيش: " + escapeHtml(String(data.inspection_date || "-")) + "<br>" +
-    "• نسبة الامتثال الإجمالية: " + escapeHtml(String(complianceRate)) + "%</p>" +
+    "• اسم المركز: " + escapeHtml(centerName) + "<br>" +
+    "• تاريخ الزيارة: " + escapeHtml(String(inspectionDate)) + "<br>" +
+    "• نسبة الامتثال: " + escapeHtml(String(complianceRate)) + "%<br>" +
+    "• اسم المُفتش الميداني: " + escapeHtml(inspectorName) + "</p>" +
     "<p><strong>ملخص النتائج</strong><br>" +
     "• عدد البنود المطابقة: " + escapeHtml(String(data.matched_cnt || 0)) + "<br>" +
     "• عدد البنود الجزئية: " + escapeHtml(String(data.partial_cnt || 0)) + "<br>" +
