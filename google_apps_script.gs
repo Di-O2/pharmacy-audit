@@ -268,6 +268,7 @@ function createCustomCenterReport(data) {
     }
 
     sheet1.getRange("D11:G14").setValues(summaryRows);
+    sheet1.getRange("B13").setValue("محور الثلاجة الطبية");
     sheet1.getRange("C15").setValue(totalItems);
     sheet1.getRange("D15:G15").setValues([[matchedCnt, partialCnt, unmatchedCnt, complianceRate + "%"]]);
   }
