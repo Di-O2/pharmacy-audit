@@ -2,6 +2,7 @@ from datetime import datetime
 import base64
 import json
 import os
+import uuid
 import zoneinfo
 import requests
 import streamlit as st
@@ -619,12 +620,12 @@ def format_near_expiry_notes(collected_items, inspector_notes=""):
     note_lines = []
     for item in collected_items:
         note_lines.append(
-            f"{item['slot']}. {item['drug_name_strength']} | الكمية: {item['quantity']} | تاريخ الانتهاء: {item['expiry_date']}"
+            f"{item['slot']}. {item['drug_name_strength']} — الكمية: {item['quantity']} — تاريخ الانتهاء: {item['expiry_date']}"
         )
     extra_text = str(inspector_notes or "").strip()
     if extra_text:
         note_lines.append(f"ملاحظات المُفتش: {extra_text}")
-    return " | ".join(note_lines)
+    return "\n".join(note_lines)
 
 
 st.subheader("📋 نموذج تقييم بنود التفتيش الفني")
@@ -753,6 +754,8 @@ if "awaiting_reissue_confirm" not in st.session_state:
     st.session_state.awaiting_reissue_confirm = False
 if "issue_report_now" not in st.session_state:
     st.session_state.issue_report_now = False
+if "submit_request_id" not in st.session_state:
+    st.session_state.submit_request_id = ""
 
 submit_btn = st.button(
     "🚀 اعتماد التفتيش وإصدار التقرير",
@@ -761,6 +764,7 @@ submit_btn = st.button(
 )
 
 if submit_btn and not st.session_state.report_issued:
+    st.session_state.submit_request_id = str(uuid.uuid4())
     st.session_state.issue_report_now = True
 elif submit_btn and st.session_state.report_issued:
     st.session_state.awaiting_reissue_confirm = True
@@ -770,6 +774,7 @@ if st.session_state.awaiting_reissue_confirm and not st.session_state.issue_repo
     confirm_col, cancel_col = st.columns(2)
     with confirm_col:
         if st.button("موافق", type="primary", use_container_width=True, key="confirm_reissue_btn"):
+            st.session_state.submit_request_id = str(uuid.uuid4())
             st.session_state.awaiting_reissue_confirm = False
             st.session_state.issue_report_now = True
             st.rerun()
@@ -864,7 +869,8 @@ if st.session_state.issue_report_now:
             "total_items": TOTAL_AUDIT_ITEMS,
             "center_name": display_center,
             "inspector_name": display_inspector,
-            "inspection_date": str(inspection_date),
+            "request_id": st.session_state.get("submit_request_id") or str(uuid.uuid4()),
+            "inspection_date": inspection_date.strftime("%Y/%m/%d"),
             "inspection_time": formatted_time_str,
             "compliance_rate": f"{compliance_rate:.2f}",
             "matched_cnt": matched_cnt,
