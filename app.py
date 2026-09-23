@@ -405,7 +405,7 @@ st.markdown(
             border-radius: 10px !important;
             box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04) !important;
             direction: ltr !important;
-            text-align: left !important;
+            text-align: right !important;
         }
 
         [data-testid="stExpander"] details,

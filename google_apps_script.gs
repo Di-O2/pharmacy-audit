@@ -1,6 +1,6 @@
 // =============================================================================
 // سكريبت المنصة الرقمية المعتمد - نظام الزيارات الميدانية لقسم الصيدلة
-// الإصدار المصحح: أرشيف + سجل الزيارات كمرجع، وعنوان رسالة مرتب
+// القالب الحالي: 5 محاور و 39 بنداً، والبند 39 حالته يوجد / لا يوجد
 // =============================================================================
 
 var TEMPLATE_FILE_ID = "1QBq_OUsbNsc3lklC8_tvFAygRhlaT7MKZ6yMyiyLkNw";
@@ -31,61 +31,15 @@ function doPost(e) {
     }
 
     var centerFileUrl = createCustomCenterReport(data);
-
     var masterSs = SpreadsheetApp.openById(TEMPLATE_FILE_ID);
-    var archiveSheet = masterSs.getSheetByName("الأرشيف");
-    if (!archiveSheet) {
-      archiveSheet = masterSs.insertSheet("الأرشيف");
-    }
-    archiveSheet.setRightToLeft(true);
-
-    if (archiveSheet.getLastRow() === 0) {
-      archiveSheet.appendRow([
-        "تاريخ التسجيل",
-        "اسم المركز الصحي",
-        "اسم المفتش الميداني",
-        "تاريخ التفتيش",
-        "وقت التفتيش",
-        "نسبة الامتثال %",
-        "مطابق",
-        "جزئي",
-        "غير مطابق",
-        "الملاحظات العامة",
-        "ملخص نقاط الضعف والملاحظات",
-        "رابط التقرير المعتمد",
-        "معرف الطلب"
-      ]);
-      archiveSheet.getRange("A1:M1").setFontWeight("bold").setBackground("#1F4E79").setFontColor("#FFFFFF");
-    }
-
-    var readableWeakSummary = buildWeakSummary(data);
-    var hyperlinkFormula = '=HYPERLINK("' + centerFileUrl + '", "عرض تقرير المركز 📄")';
-
-    archiveSheet.appendRow([
-      new Date(),
-      data.center_name || "غير محدد",
-      data.inspector_name || "غير محدد",
-      data.inspection_date || "-",
-      data.inspection_time || "-",
-      (data.compliance_rate || "0") + "%",
-      data.matched_cnt || 0,
-      data.partial_cnt || 0,
-      data.unmatched_cnt || 0,
-      data.general_notes || "لا توجد ملاحظات",
-      readableWeakSummary,
-      hyperlinkFormula,
-      data.request_id || ""
-    ]);
-
+    appendArchiveRow(masterSs, data, centerFileUrl);
     logVisitReference(masterSs, data, centerFileUrl);
-
     sendApprovedEmailReport(data, centerFileUrl);
 
     return ContentService.createTextOutput(JSON.stringify({
       "result": "success",
       "center_file_url": centerFileUrl
     })).setMimeType(ContentService.MimeType.JSON);
-
   } catch (error) {
     return ContentService.createTextOutput(JSON.stringify({
       "result": "error",
@@ -109,6 +63,26 @@ function isCompliantStatus(status) {
 
 function isWeakStatus(status) {
   return !isCompliantStatus(status);
+}
+
+function displayStatus(rawStatus) {
+  var status = String(rawStatus || "").trim();
+  if (status === "مطابق") {
+    return { text: "مطابق", pct: "100.00%", priority: "Low" };
+  }
+  if (status === "جزئي" || status === "مطابق جزئياً") {
+    return { text: "مطابق جزئياً", pct: "50.00%", priority: "Medium" };
+  }
+  if (status === "لا يوجد") {
+    return { text: "لا يوجد", pct: "100.00%", priority: "Low" };
+  }
+  if (status === "يوجد") {
+    return { text: "يوجد", pct: "0.00%", priority: "High" };
+  }
+  if (status === "غير محدد" || status === "") {
+    return { text: "غير مطابق (غير مكتمل)", pct: "0.00%", priority: "High" };
+  }
+  return { text: "غير مطابق", pct: "0.00%", priority: "High" };
 }
 
 function formatItemNotes(item) {
@@ -135,47 +109,48 @@ function formatItemNotes(item) {
     return lines.join("\n");
   }
 
-  var notes = (item.notes || "").trim();
+  var notes = String(item.notes || "").trim();
   if (!notes || notes === "غير محددة" || notes === "ملاحظة غير محددة") {
     return "";
   }
   return notes;
 }
 
-function displayStatus(rawStatus) {
-  var status = (rawStatus || "").trim();
-  if (status === "مطابق") {
-    return { text: "مطابق", pct: "100.0%", priority: "Low" };
+function collectWeakItems(data) {
+  var weakItems = [];
+  if (data.responses && data.responses.length > 0) {
+    for (var i = 0; i < data.responses.length; i++) {
+      var item = data.responses[i];
+      if (isWeakStatus(String(item.status || "").trim())) {
+        weakItems.push(item);
+      }
+    }
   }
-  if (status === "جزئي" || status === "مطابق جزئياً") {
-    return { text: "مطابق جزئياً", pct: "50.0%", priority: "Medium" };
-  }
-  if (status === "لا يوجد") {
-    return { text: "لا يوجد", pct: "100.0%", priority: "Low" };
-  }
-  if (status === "يوجد") {
-    return { text: "يوجد", pct: "0.0%", priority: "High" };
-  }
-  if (status === "غير محدد" || status === "") {
-    return { text: "غير مطابق (غير مكتمل)", pct: "0.0%", priority: "High" };
-  }
-  return { text: "غير مطابق", pct: "0.0%", priority: "High" };
+  return weakItems;
 }
 
 function buildWeakSummary(data) {
   var weakSummaryList = [];
-  if (data.responses && data.responses.length > 0) {
-    for (var i = 0; i < data.responses.length; i++) {
-      var rItem = data.responses[i];
-      var rStatus = (rItem.status || "").trim();
-      if (isWeakStatus(rStatus)) {
-        var notePart = formatItemNotes(rItem);
-        notePart = notePart ? " (" + notePart.replace(/\n/g, " | ") + ")" : "";
-        weakSummaryList.push("بند " + (rItem.id || (i + 1)) + ": " + displayStatus(rStatus).text + notePart);
-      }
-    }
+  var weakItems = collectWeakItems(data);
+  for (var i = 0; i < weakItems.length; i++) {
+    var item = weakItems[i];
+    var notePart = formatItemNotes(item);
+    notePart = notePart ? " (" + notePart.replace(/\n/g, " | ") + ")" : "";
+    weakSummaryList.push("بند " + (item.id || (i + 1)) + ": " + displayStatus(item.status).text + notePart);
   }
   return weakSummaryList.length > 0 ? weakSummaryList.join(" | \n") : "لا توجد نقاط ضعف (مطابق 100%)";
+}
+
+function findRowByText(sheet, text) {
+  var last = Math.max(sheet.getLastRow(), 8);
+  var values = sheet.getRange(1, 1, last, 3).getValues();
+  for (var i = 0; i < values.length; i++) {
+    var joined = String(values[i][0] || "") + " " + String(values[i][1] || "") + " " + String(values[i][2] || "");
+    if (joined.indexOf(text) !== -1) {
+      return i + 1;
+    }
+  }
+  return -1;
 }
 
 function findRecentDuplicateUrl(data) {
@@ -185,7 +160,6 @@ function findRecentDuplicateUrl(data) {
     if (!archiveSheet || archiveSheet.getLastRow() < 2) {
       return "";
     }
-
     var lastRow = archiveSheet.getLastRow();
     var lookback = Math.min(8, lastRow - 1);
     var rows = archiveSheet.getRange(lastRow - lookback + 1, 1, lookback, 13).getValues();
@@ -198,274 +172,60 @@ function findRecentDuplicateUrl(data) {
 
     for (var i = rows.length - 1; i >= 0; i--) {
       var registered = rows[i][0];
-      var rowCenter = String(rows[i][1] || "");
-      var rowInspector = String(rows[i][2] || "");
-      var rowDate = String(rows[i][3] || "");
-      var rowRate = String(rows[i][5] || "");
-      var rowUrl = String(rows[i][11] || "");
-      var rowRequestId = String(rows[i][12] || "");
-      var sameRequest = requestId !== "" && rowRequestId === requestId;
-      var sameVisit = rowCenter === center && rowInspector === inspector && rowDate === date && rowRate.indexOf(rate) !== -1;
+      var sameRequest = requestId !== "" && String(rows[i][12] || "") === requestId;
+      var sameVisit = String(rows[i][1] || "") === center &&
+        String(rows[i][2] || "") === inspector &&
+        String(rows[i][3] || "") === date &&
+        String(rows[i][5] || "").indexOf(rate) !== -1;
       var recent = registered && (now - new Date(registered).getTime()) < 3 * 60 * 1000;
-      if ((sameRequest || (sameVisit && recent)) && rowUrl) {
-        return rowUrl;
+      if ((sameRequest || (sameVisit && recent)) && rows[i][11]) {
+        return String(rows[i][11]);
       }
     }
   } catch (err) {}
   return "";
 }
 
-function createCustomCenterReport(data) {
-  var centerName = data.center_name || "غير محدد";
-  var inspectorName = data.inspector_name || "غير محدد";
-  var inspectionDate = data.inspection_date || "-";
-  var complianceRate = data.compliance_rate || "0";
-  var matchedCnt = data.matched_cnt || 0;
-  var partialCnt = data.partial_cnt || 0;
-  var unmatchedCnt = data.unmatched_cnt || 0;
-  var weakTotal = collectWeakItems(data).length;
-  var totalItems = getTotalItems(data);
-
-  var fileName = "تقرير زيارة ميدانية - " + centerName + " - " + inspectionDate;
-
-  var templateFile = DriveApp.getFileById(TEMPLATE_FILE_ID);
-  var targetFolder = DriveApp.getFolderById(TARGET_FOLDER_ID);
-
-  var newFile = templateFile.makeCopy(fileName, targetFolder);
-  var newSpreadsheet = SpreadsheetApp.open(newFile);
-
-  removeReferenceSheetsFromCopy(newSpreadsheet);
-
-  var sheet1 = newSpreadsheet.getSheetByName("تقرير الزيارة الميدانية") || newSpreadsheet.getSheets()[0];
-  sheet1.setRightToLeft(true);
-
-  sheet1.getRange("A2").setValue("مركز الرعاية الصحية الأولية : " + centerName);
-  sheet1.getRange("C2").setValue("| إسم المُفتش الميداني : " + inspectorName);
-  sheet1.getRange("E2").setValue("| تاريخ الجولة : " + inspectionDate);
-  sheet1.getRange("A3").setValue("جهة التقييم: إدارة الخدمات الصيدلانية لمراكز الرعاية الصحية الأولية");
-
-  sheet1.getRange("A6").setValue(complianceRate + "%");
-  sheet1.getRange("C6").setValue(matchedCnt + " من أصل " + totalItems + " بنداً");
-  sheet1.getRange("F6").setValue(weakTotal + " (نقاط ضعف وملاحظات)");
-
-  if (data.axis_summary) {
-    var totalsPerAxis = [16, 8, 6, 8];
-    var axesKeys = ["axis1", "axis2", "axis3", "axis4"];
-    var summaryRows = [];
-
-    for (var a = 0; a < axesKeys.length; a++) {
-      var ax = data.axis_summary[axesKeys[a]] || {matched: 0, partial: 0, unmatched: 0};
-      var m = ax.matched || 0;
-      var p = ax.partial || 0;
-      var u = ax.unmatched || 0;
-      var t = ax.total || totalsPerAxis[a];
-      var r = (t > 0) ? (((m + (p * 0.5)) / t) * 100).toFixed(2) + "%" : "0.00%";
-      if (ax.rate !== undefined) {
-        r = ax.rate + "%";
-      }
-      summaryRows.push([m, p, u, r]);
-    }
-
-    sheet1.getRange("D11:G14").setValues(summaryRows);
-    sheet1.getRange("B13").setValue("محور الثلاجة الطبية");
-    sheet1.getRange("C15").setValue(totalItems);
-    sheet1.getRange("D15:G15").setValues([[matchedCnt, partialCnt, unmatchedCnt, complianceRate + "%"]]);
+function appendArchiveRow(masterSs, data, centerFileUrl) {
+  var archiveSheet = masterSs.getSheetByName("الأرشيف");
+  if (!archiveSheet) {
+    archiveSheet = masterSs.insertSheet("الأرشيف");
   }
-
-  sheet1.getRange("A19:G23").clearContent();
-  sheet1.getRange("A27:G31").clearContent();
-  sheet1.showRows(19, 13);
-
-  var weakItems = collectWeakItems(data);
-
-  if (weakItems.length > 0) {
-    var weakRows = [];
-    var actionRows = [];
-    var displayCount = Math.min(weakItems.length, 5);
-
-    for (var w = 0; w < displayCount; w++) {
-      var wItem = weakItems[w];
-      var mapped = displayStatus(wItem.status);
-      var diagnosisNote = formatItemNotes(wItem) || "يتطلب استكمال المتطلب وتصحيحه عاجلاً.";
-      var criterionText = (wItem.criterion || wItem.text || wItem.title || "").trim();
-      var fullCriterionName = "بند " + (wItem.id || (w + 1)) + (criterionText ? (" : " + criterionText) : "");
-      var axisTitle = wItem.section || wItem.axis || "محور التقييم";
-
-      weakRows.push([
-        axisTitle,
-        fullCriterionName,
-        "",
-        mapped.text,
-        mapped.pct,
-        diagnosisNote,
-        mapped.priority
-      ]);
-
-      actionRows.push([
-        (w + 1),
-        "معالجة واستكمال الملاحظة المرصودة في البند " + (wItem.id || (w + 1)) + (criterionText ? (" : " + criterionText) : ""),
-        "",
-        "توفر الاستكمال بنسبة 100%",
-        "المعاينة الميدانية والتدقيق",
-        "قيد التنفيذ",
-        ""
-      ]);
-    }
-
-    sheet1.getRange(19, 1, weakRows.length, 7).setValues(weakRows);
-    sheet1.getRange(27, 1, actionRows.length, 7).setValues(actionRows);
-    sheet1.getRange(27, 1, actionRows.length, 1).setNumberFormat("@");
-
-    if (displayCount < 5) {
-      var rowsToHide = 5 - displayCount;
-      sheet1.hideRows(19 + displayCount, rowsToHide);
-      sheet1.hideRows(27 + displayCount, rowsToHide);
-    }
-
-  } else {
-    sheet1.getRange(19, 1, 1, 7).setValues([[
-      "-",
-      "جميع البنود مطابقة تماماً دون وجود أي نقاط ضعف.",
-      "",
+  archiveSheet.setRightToLeft(true);
+  if (archiveSheet.getLastRow() === 0) {
+    archiveSheet.appendRow([
+      "تاريخ التسجيل",
+      "اسم المركز الصحي",
+      "اسم المُفتش الميداني",
+      "تاريخ التفتيش",
+      "وقت التفتيش",
+      "نسبة الامتثال %",
       "مطابق",
-      "100.0%",
-      "الوضع الميداني ممتاز ولا توجد ملاحظات.",
-      "Low"
-    ]]);
-
-    sheet1.getRange(27, 1, 1, 7).setValues([[
-      1,
-      "الاستمرار في الحفاظ على نسبة الامتثال المرتفعة والمتابعة الدورية.",
-      "",
-      "100% امتثال مستمر",
-      "المتابعة الدورية",
-      "منجز ومعتمد",
-      ""
-    ]]);
-    sheet1.getRange("A27").setNumberFormat("@");
-    sheet1.hideRows(20, 4);
-    sheet1.hideRows(28, 4);
+      "جزئي",
+      "غير مطابق",
+      "الملاحظات العامة",
+      "ملخص نقاط الضعف والملاحظات",
+      "رابط التقرير المعتمد",
+      "معرف الطلب"
+    ]);
+    archiveSheet.getRange("A1:M1").setFontWeight("bold").setBackground("#1F4E79").setFontColor("#FFFFFF");
   }
 
-  var sheet2 = newSpreadsheet.getSheetByName("قائمة التدقيق الديناميكية");
-  if (sheet2) {
-    fillAuditChecklistSheet(sheet2, data, centerName, inspectorName, complianceRate);
-  }
-
-  newSpreadsheet.setActiveSheet(sheet1);
-  return newFile.getUrl();
-}
-
-function collectWeakItems(data) {
-  var weakItems = [];
-  if (data.responses && data.responses.length > 0) {
-    for (var i = 0; i < data.responses.length; i++) {
-      var item = data.responses[i];
-      var st = (item.status || "").trim();
-      if (isWeakStatus(st)) {
-        weakItems.push(item);
-      }
-    }
-  }
-  return weakItems;
-}
-
-function fillAuditChecklistSheet(sheet2, data, centerName, inspectorName, complianceRate) {
-  sheet2.setRightToLeft(true);
-  sheet2.getRange("A2").setValue("اسم المركز : " + centerName);
-  sheet2.getRange("D3").setValue(complianceRate + "%");
-
-  var row2LastCol = Math.max(sheet2.getLastColumn(), 7);
-  var row2Range = sheet2.getRange(2, 1, 1, row2LastCol);
-  var row2Vals = row2Range.getValues()[0];
-  var updatedInspector = false;
-
-  for (var colIdx = 0; colIdx < row2Vals.length; colIdx++) {
-    var cellStr = String(row2Vals[colIdx]);
-    if (cellStr.indexOf("المفتش") !== -1 || cellStr.indexOf("المُفتش") !== -1 || cellStr.indexOf("متعبة") !== -1) {
-      sheet2.getRange(2, colIdx + 1).setValue("اسم المُفتش : " + inspectorName);
-      updatedInspector = true;
-      break;
-    }
-  }
-
-  if (!updatedInspector) {
-    sheet2.getRange("E2").setValue("اسم المُفتش : " + inspectorName);
-  }
-
-  var respMap = {};
-  if (data.responses && data.responses.length > 0) {
-    for (var r = 0; r < data.responses.length; r++) {
-      var respItem = data.responses[r];
-      var itemNum = respItem.id || (r + 1);
-      respMap[itemNum] = respItem;
-    }
-  }
-
-  var maxRows2 = sheet2.getLastRow();
-  var startRow = 6;
-  var numRows = maxRows2 - startRow + 1;
-  var found39 = false;
-
-  if (numRows > 0) {
-    var dataRange = sheet2.getRange(startRow, 1, numRows, 5);
-    var values = dataRange.getValues();
-
-    for (var k = 0; k < values.length; k++) {
-      var num = parseInt(values[k][0], 10);
-      if (!isNaN(num) && respMap[num]) {
-        if (num === 39) {
-          found39 = true;
-        }
-        var currentResp = respMap[num];
-        var mapped = displayStatus(currentResp.status);
-        values[k][2] = mapped.text;
-        values[k][3] = mapped.pct;
-        values[k][4] = formatItemNotes(currentResp);
-      }
-    }
-
-    dataRange.setValues(values);
-  }
-
-  if (!found39 && respMap[39]) {
-    appendNearExpiryChecklistRow(sheet2, respMap[39]);
-  }
-
-  var totalBottomRow = sheet2.getLastRow();
-  sheet2.getRange(totalBottomRow, 4).setValue(complianceRate + "%");
-}
-
-function appendNearExpiryChecklistRow(sheet2, item39) {
-  var lastRow = sheet2.getLastRow();
-  var lastFirst = String(sheet2.getRange(lastRow, 1).getValue() || "");
-  var insertAt = lastRow;
-  if (isNaN(parseInt(lastFirst, 10))) {
-    sheet2.insertRowBefore(lastRow);
-    insertAt = lastRow;
-  } else {
-    insertAt = lastRow + 1;
-    sheet2.insertRowAfter(lastRow);
-  }
-
-  var mapped = displayStatus(item39.status);
-  sheet2.getRange(insertAt, 1, 1, 5).setValues([[
-    39,
-    item39.criterion || "وجود أصناف دوائية قاربت على انتهاء الصلاحية (Near-Expiry)",
-    mapped.text,
-    mapped.pct,
-    formatItemNotes(item39)
-  ]]);
-}
-
-function removeReferenceSheetsFromCopy(newSpreadsheet) {
-  var referenceNames = ["الأرشيف", "الزيارات"];
-  for (var i = 0; i < referenceNames.length; i++) {
-    var refSheet = newSpreadsheet.getSheetByName(referenceNames[i]);
-    if (refSheet && newSpreadsheet.getSheets().length > 1) {
-      newSpreadsheet.deleteSheet(refSheet);
-    }
-  }
+  archiveSheet.appendRow([
+    new Date(),
+    data.center_name || "غير محدد",
+    data.inspector_name || "غير محدد",
+    data.inspection_date || "-",
+    data.inspection_time || "-",
+    (data.compliance_rate || "0") + "%",
+    data.matched_cnt || 0,
+    data.partial_cnt || 0,
+    data.unmatched_cnt || 0,
+    data.general_notes || "لا توجد ملاحظات",
+    buildWeakSummary(data),
+    '=HYPERLINK("' + centerFileUrl + '", "عرض تقرير المركز 📄")',
+    data.request_id || ""
+  ]);
 }
 
 function ensureSheetWithHeaders(ss, sheetName, headers) {
@@ -489,39 +249,293 @@ function logVisitReference(masterSs, data, centerFileUrl) {
     "اسم المركز",
     "تاريخ الزيارة",
     "نسبة الامتثال",
-    "اسم المفتش الميداني",
+    "اسم المُفتش الميداني",
     "وقت الزيارة",
     "رابط التقرير المعتمد",
     "تاريخ التسجيل",
     "معرف الطلب"
   ]);
 
-  var hyperlinkFormula = '=HYPERLINK("' + centerFileUrl + '", "عرض تقرير المركز 📄")';
   visitsSheet.appendRow([
     data.center_name || "غير محدد",
     data.inspection_date || "-",
     (data.compliance_rate || "0") + "%",
     data.inspector_name || "غير محدد",
     data.inspection_time || "-",
-    hyperlinkFormula,
+    '=HYPERLINK("' + centerFileUrl + '", "عرض تقرير المركز 📄")',
     new Date(),
     data.request_id || ""
   ]);
 }
 
-function buildEmailSubject(data) {
+function createCustomCenterReport(data) {
   var centerName = data.center_name || "غير محدد";
+  var inspectorName = data.inspector_name || "غير محدد";
   var inspectionDate = data.inspection_date || "-";
   var complianceRate = data.compliance_rate || "0";
+  var matchedCnt = data.matched_cnt || 0;
+  var partialCnt = data.partial_cnt || 0;
+  var unmatchedCnt = data.unmatched_cnt || 0;
+  var weakItems = collectWeakItems(data);
+  var totalItems = getTotalItems(data);
+
+  var fileName = "تقرير زيارة ميدانية - " + centerName + " - " + inspectionDate;
+  var newFile = DriveApp.getFileById(TEMPLATE_FILE_ID).makeCopy(fileName, DriveApp.getFolderById(TARGET_FOLDER_ID));
+  var newSpreadsheet = SpreadsheetApp.open(newFile);
+  removeReferenceSheetsFromCopy(newSpreadsheet);
+
+  var sheet1 = newSpreadsheet.getSheetByName("تقرير الزيارة الميدانية") || newSpreadsheet.getSheets()[0];
+  sheet1.setRightToLeft(true);
+
+  fillReportHeader(sheet1, centerName, inspectorName, inspectionDate);
+  sheet1.getRange("A6").setValue(complianceRate + "%");
+  sheet1.getRange("C6").setValue(matchedCnt + " من أصل " + totalItems + " بنداً");
+
+  var weakCell = findHeaderCell(sheet1, "نقاط الضعف");
+  if (weakCell) {
+    sheet1.getRange(weakCell.row + 1, weakCell.col).setValue(weakItems.length + " (نقاط ضعف وملاحظات)");
+  } else {
+    sheet1.getRange("F6").setValue(weakItems.length + " (نقاط ضعف وملاحظات)");
+  }
+
+  fillAxisSummary(sheet1, data, matchedCnt, partialCnt, unmatchedCnt, complianceRate, totalItems);
+  fillWeaknessAndActionTables(sheet1, weakItems);
+
+  var sheet2 = newSpreadsheet.getSheetByName("قائمة التدقيق الديناميكية");
+  if (sheet2) {
+    fillAuditChecklistSheet(sheet2, data, centerName, inspectorName, complianceRate);
+  }
+
+  newSpreadsheet.setActiveSheet(sheet1);
+  return newFile.getUrl();
+}
+
+function fillReportHeader(sheet1, centerName, inspectorName, inspectionDate) {
+  sheet1.getRange("A2").setValue("مركز الرعاية الصحية الأولية : " + centerName);
+  var row2 = sheet1.getRange(2, 1, 1, 8).getValues()[0];
+  var inspectorWritten = false;
+  var dateWritten = false;
+
+  for (var i = 1; i < row2.length; i++) {
+    var text = String(row2[i] || "");
+    if (!inspectorWritten && (text.indexOf("المفتش") !== -1 || text.indexOf("المُفتش") !== -1)) {
+      sheet1.getRange(2, i + 1).setValue("| إسم المُفتش الميداني : " + inspectorName);
+      inspectorWritten = true;
+    } else if (!dateWritten && text.indexOf("تاريخ") !== -1) {
+      sheet1.getRange(2, i + 1).setValue("| تاريخ الجولة : " + inspectionDate);
+      dateWritten = true;
+    }
+  }
+
+  if (!inspectorWritten) {
+    sheet1.getRange("B2").setValue("| إسم المُفتش الميداني : " + inspectorName);
+  }
+  if (!dateWritten) {
+    sheet1.getRange("C2").setValue("| تاريخ الجولة : " + inspectionDate);
+  }
+}
+
+function findHeaderCell(sheet, text) {
+  var lastRow = Math.max(sheet.getLastRow(), 8);
+  var lastCol = Math.max(sheet.getLastColumn(), 7);
+  var values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  for (var r = 0; r < values.length; r++) {
+    for (var c = 0; c < values[r].length; c++) {
+      if (String(values[r][c] || "").indexOf(text) !== -1) {
+        return { row: r + 1, col: c + 1 };
+      }
+    }
+  }
+  return null;
+}
+
+function fillAxisSummary(sheet1, data, matchedCnt, partialCnt, unmatchedCnt, complianceRate, totalItems) {
+  var axisRows = {
+    "رقيم": ["axis1", 16],
+    "غرفة الأدوية": ["axis2", 8],
+    "الثلاجة": ["axis3", 6],
+    "عربة الطوارئ": ["axis4", 8],
+    "مخزن الأدوية": ["axis5", 1]
+  };
+
+  var last = Math.max(sheet1.getLastRow(), 20);
+  var labels = sheet1.getRange(1, 1, last, 3).getValues();
+
+  for (var i = 0; i < labels.length; i++) {
+    var label = String(labels[i][0] || "") + " " + String(labels[i][1] || "");
+    for (var key in axisRows) {
+      if (label.indexOf(key) !== -1 && label.indexOf("الإجمالي") === -1) {
+        var axisKey = axisRows[key][0];
+        var fallbackTotal = axisRows[key][1];
+        var ax = (data.axis_summary && data.axis_summary[axisKey]) ? data.axis_summary[axisKey] : {};
+        var m = ax.matched || 0;
+        var p = ax.partial || 0;
+        var u = ax.unmatched || 0;
+        var t = ax.total || fallbackTotal;
+        var rate = (t > 0) ? (((m + (p * 0.5)) / t) * 100).toFixed(2) + "%" : "0.00%";
+        sheet1.getRange(i + 1, 3, 1, 5).setValues([[t, m, p, u, rate]]);
+      }
+    }
+    if (label.indexOf("الإجمالي") !== -1) {
+      sheet1.getRange(i + 1, 3, 1, 5).setValues([[totalItems, matchedCnt, partialCnt, unmatchedCnt, complianceRate + "%"]]);
+    }
+  }
+}
+
+function fillWeaknessAndActionTables(sheet1, weakItems) {
+  var weakHeader = findRowByText(sheet1, "رصد");
+  var actionHeader = findRowByText(sheet1, "الخطة العلاجية");
+  if (weakHeader < 0) {
+    weakHeader = 17;
+  }
+  if (actionHeader < 0) {
+    actionHeader = 25;
+  }
+
+  var weakStart = weakHeader + 2;
+  var actionStart = actionHeader + 2;
+  var maxSlots = 5;
+
+  sheet1.getRange(weakStart, 1, maxSlots, 7).clearContent();
+  sheet1.getRange(actionStart, 1, maxSlots, 7).clearContent();
+  sheet1.showRows(weakStart, maxSlots);
+  sheet1.showRows(actionStart, maxSlots);
+
+  if (weakItems.length === 0) {
+    sheet1.getRange(weakStart, 1, 1, 6).setValues([[
+      "-",
+      "جميع البنود مطابقة تماماً دون وجود أي نقاط ضعف.",
+      "مطابق",
+      "100.00%",
+      "الوضع الميداني ممتاز ولا توجد ملاحظات.",
+      "Low"
+    ]]);
+    sheet1.getRange(actionStart, 1, 1, 5).setValues([[
+      "1",
+      "الاستمرار في الحفاظ على نسبة الامتثال المرتفعة والمتابعة الدورية.",
+      "100% امتثال مستمر",
+      "المتابعة الدورية",
+      "منجز ومعتمد"
+    ]]);
+    sheet1.getRange(actionStart, 1).setNumberFormat("@");
+    sheet1.hideRows(weakStart + 1, maxSlots - 1);
+    sheet1.hideRows(actionStart + 1, maxSlots - 1);
+    return;
+  }
+
+  var displayCount = Math.min(weakItems.length, maxSlots);
+  var weakRows = [];
+  var actionRows = [];
+
+  for (var w = 0; w < displayCount; w++) {
+    var item = weakItems[w];
+    var mapped = displayStatus(item.status);
+    var criterionText = String(item.criterion || "").trim();
+    var itemId = item.id || (w + 1);
+    weakRows.push([
+      item.section || "محور التقييم",
+      "بند " + itemId + (criterionText ? (" : " + criterionText) : ""),
+      mapped.text,
+      mapped.pct,
+      formatItemNotes(item) || "يتطلب استكمال المتطلب وتصحيحه عاجلاً.",
+      mapped.priority
+    ]);
+    actionRows.push([
+      String(w + 1),
+      "معالجة واستكمال الملاحظة المرصودة في البند " + itemId + (criterionText ? (" : " + criterionText) : ""),
+      "توفر الاستكمال بنسبة 100%",
+      "المعاينة الميدانية والتدقيق",
+      "قيد التنفيذ"
+    ]);
+  }
+
+  sheet1.getRange(weakStart, 1, weakRows.length, 6).setValues(weakRows);
+  sheet1.getRange(weakStart, 1, weakRows.length, 6).setWrap(true);
+  sheet1.getRange(actionStart, 1, actionRows.length, 5).setValues(actionRows);
+  sheet1.getRange(actionStart, 1, actionRows.length, 1).setNumberFormat("@");
+
+  if (displayCount < maxSlots) {
+    sheet1.hideRows(weakStart + displayCount, maxSlots - displayCount);
+    sheet1.hideRows(actionStart + displayCount, maxSlots - displayCount);
+  }
+}
+
+function fillAuditChecklistSheet(sheet2, data, centerName, inspectorName, complianceRate) {
+  sheet2.setRightToLeft(true);
+  sheet2.getRange("A2").setValue("اسم المركز : " + centerName);
+
+  var row2 = sheet2.getRange(2, 1, 1, Math.max(sheet2.getLastColumn(), 7)).getValues()[0];
+  var inspectorWritten = false;
+  for (var colIdx = 0; colIdx < row2.length; colIdx++) {
+    var cellStr = String(row2[colIdx] || "");
+    if (cellStr.indexOf("المفتش") !== -1 || cellStr.indexOf("المُفتش") !== -1) {
+      sheet2.getRange(2, colIdx + 1).setValue("اسم المُفتش : " + inspectorName);
+      inspectorWritten = true;
+      break;
+    }
+  }
+  if (!inspectorWritten) {
+    sheet2.getRange("E2").setValue("اسم المُفتش : " + inspectorName);
+  }
+
+  var rateCell = findHeaderCell(sheet2, "نسبة الامتثال");
+  if (rateCell) {
+    sheet2.getRange(rateCell.row + 1, rateCell.col).setValue(complianceRate + "%");
+  } else {
+    sheet2.getRange("D3").setValue(complianceRate + "%");
+  }
+
+  var respMap = {};
+  if (data.responses && data.responses.length > 0) {
+    for (var r = 0; r < data.responses.length; r++) {
+      respMap[data.responses[r].id || (r + 1)] = data.responses[r];
+    }
+  }
+
+  var startRow = 6;
+  var lastRow = sheet2.getLastRow();
+  if (lastRow >= startRow) {
+    var values = sheet2.getRange(startRow, 1, lastRow - startRow + 1, 5).getValues();
+    for (var k = 0; k < values.length; k++) {
+      var num = parseInt(values[k][0], 10);
+      if (!isNaN(num) && respMap[num]) {
+        var mapped = displayStatus(respMap[num].status);
+        values[k][2] = mapped.text;
+        values[k][3] = mapped.pct;
+        values[k][4] = formatItemNotes(respMap[num]);
+      }
+    }
+    sheet2.getRange(startRow, 1, values.length, 5).setValues(values);
+    sheet2.getRange(startRow, 5, values.length, 1).setWrap(true);
+  }
+
+  var totalRow = findRowByText(sheet2, "النتيجة النهائية");
+  if (totalRow > 0) {
+    sheet2.getRange(totalRow, 4).setValue(complianceRate + "%");
+  } else {
+    sheet2.getRange(sheet2.getLastRow(), 4).setValue(complianceRate + "%");
+  }
+}
+
+function removeReferenceSheetsFromCopy(newSpreadsheet) {
+  var referenceNames = ["الأرشيف", "الزيارات"];
+  for (var i = 0; i < referenceNames.length; i++) {
+    var refSheet = newSpreadsheet.getSheetByName(referenceNames[i]);
+    if (refSheet && newSpreadsheet.getSheets().length > 1) {
+      newSpreadsheet.deleteSheet(refSheet);
+    }
+  }
+}
+
+function buildEmailSubject(data) {
   return (
-    "\u200Fاسم المركز : " + centerName +
-    "                   تاريخ الزيارة : " + inspectionDate +
-    "                       نسبة الامتثال : " + complianceRate + "%"
+    "\u200Fاسم المركز : " + (data.center_name || "غير محدد") +
+    "                   تاريخ الزيارة : " + (data.inspection_date || "-") +
+    "                       نسبة الامتثال : " + (data.compliance_rate || "0") + "%"
   );
 }
 
 function sendApprovedEmailReport(data, centerFileUrl) {
-  var recipientEmail = RECIPIENT_EMAIL;
   var inspectorName = data.inspector_name || "غير محدد";
   var centerName = data.center_name || "غير محدد";
   var inspectionDate = data.inspection_date || "-";
@@ -534,23 +548,21 @@ function sendApprovedEmailReport(data, centerFileUrl) {
   if (data.responses && data.responses.length > 0) {
     for (var i = 0; i < data.responses.length; i++) {
       var item = data.responses[i];
-      var itemId = item.id || (i + 1);
       var mapped = displayStatus(item.status);
       var itemNote = formatItemNotes(item);
       var noteHtml = itemNote ? " (ملاحظة: " + escapeHtml(itemNote).replace(/\n/g, "<br>") + ")" : "";
       var noteText = itemNote ? " (ملاحظة: " + itemNote.replace(/\n/g, " | ") + ")" : "";
-      itemsDetailsHtml += "بند " + itemId + ": " + escapeHtml(mapped.text) + noteHtml + "<br>";
-      itemsDetailsText += "بند " + itemId + ": " + mapped.text + noteText + "\n";
+      itemsDetailsHtml += "بند " + (item.id || (i + 1)) + ": " + escapeHtml(mapped.text) + noteHtml + "<br>";
+      itemsDetailsText += "بند " + (item.id || (i + 1)) + ": " + mapped.text + noteText + "\n";
     }
   }
 
   var bodyText =
     "تم اعتماد تقرير الزيارة الميدانية عبر المنصة الرقمية:\n\n" +
-    "البيانات الأساسية:\n" +
-    "• اسم المركز: " + centerName + "\n" +
-    "• تاريخ الزيارة: " + inspectionDate + "\n" +
-    "• نسبة الامتثال: " + complianceRate + "%\n" +
-    "• اسم المُفتش الميداني: " + inspectorName + "\n\n" +
+    "اسم المركز : " + centerName + "\n" +
+    "تاريخ الزيارة : " + inspectionDate + "\n" +
+    "نسبة الامتثال : " + complianceRate + "%\n" +
+    "اسم المُفتش الميداني : " + inspectorName + "\n\n" +
     "ملخص النتائج:\n" +
     "• عدد البنود المطابقة: " + (data.matched_cnt || 0) + "\n" +
     "• عدد البنود الجزئية: " + (data.partial_cnt || 0) + "\n" +
@@ -566,11 +578,10 @@ function sendApprovedEmailReport(data, centerFileUrl) {
   var htmlBody =
     '<div dir="rtl" style="font-family:Tahoma,Arial,sans-serif;text-align:right;line-height:1.8;font-size:15px;">' +
     "<p>تم اعتماد تقرير الزيارة الميدانية عبر المنصة الرقمية.</p>" +
-    "<p><strong>البيانات الأساسية</strong><br>" +
-    "• اسم المركز: " + escapeHtml(centerName) + "<br>" +
-    "• تاريخ الزيارة: " + escapeHtml(String(inspectionDate)) + "<br>" +
-    "• نسبة الامتثال: " + escapeHtml(String(complianceRate)) + "%<br>" +
-    "• اسم المُفتش الميداني: " + escapeHtml(inspectorName) + "</p>" +
+    "<p>اسم المركز : " + escapeHtml(centerName) + "<br>" +
+    "تاريخ الزيارة : " + escapeHtml(String(inspectionDate)) + "<br>" +
+    "نسبة الامتثال : " + escapeHtml(String(complianceRate)) + "%<br>" +
+    "اسم المُفتش الميداني : " + escapeHtml(inspectorName) + "</p>" +
     "<p><strong>ملخص النتائج</strong><br>" +
     "• عدد البنود المطابقة: " + escapeHtml(String(data.matched_cnt || 0)) + "<br>" +
     "• عدد البنود الجزئية: " + escapeHtml(String(data.partial_cnt || 0)) + "<br>" +
@@ -578,11 +589,10 @@ function sendApprovedEmailReport(data, centerFileUrl) {
     "<p><strong>الملاحظات والتوصيات العامة</strong><br>" + escapeHtml(generalNotes).replace(/\n/g, "<br>") + "</p>" +
     "<p><strong>تفاصيل التقييم والملاحظات</strong><br>" + itemsDetailsHtml + "</p>" +
     '<p>يمكنك الاطلاع على ملف تقرير المركز المنسق عبر الرابط:<br><a href="' + escapeHtml(centerFileUrl) + '">' + escapeHtml(centerFileUrl) + "</a></p>" +
-    "<p>إدارة الخدمات الصيدلانية</p>" +
-    "</div>";
+    "<p>إدارة الخدمات الصيدلانية</p></div>";
 
   MailApp.sendEmail({
-    to: recipientEmail,
+    to: RECIPIENT_EMAIL,
     subject: subject,
     body: bodyText,
     htmlBody: htmlBody
