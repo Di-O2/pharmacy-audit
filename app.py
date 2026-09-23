@@ -24,6 +24,23 @@ st.set_page_config(
     layout="wide",
 )
 
+# ----------------------------------------------------
+# وسوم تحسين معاينة الرابط والصورة على واتساب (Open Graph)
+# ----------------------------------------------------
+OG_IMAGE_URL = "https://raw.githubusercontent.com/Di-02/pharmacy-audit/main/header.PNG"
+
+meta_tags = f"""
+    <!-- Open Graph / WhatsApp Preview -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://pharmacy-audit.streamlit.app/">
+    <meta property="og:title" content="تقرير الزيارة الميدانية | إدارة الخدمات الصيدلانية">
+    <meta property="og:description" content="المنصة الرقمية الموحدة لتقييم الامتثال الصيدلاني والتفتيش الفني المباشر">
+    <meta property="og:image" content="{OG_IMAGE_URL}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+"""
+st.markdown(meta_tags, unsafe_allow_html=True)
+
 saudi_tz = zoneinfo.ZoneInfo("Asia/Riyadh")
 saudi_now = datetime.now(saudi_tz)
 
