@@ -13,7 +13,7 @@ import streamlit.components.v1 as components
 # ==========================================
 OFFICIAL_REPORT_TITLE = "تقرير الزيارة الميدانية | إدارة الخدمات الصيدلانية"
 OFFICIAL_FOOTER = "إدارة الخدمات الصيدلانية لمراكز الرعاية الصحية الأولية - تجمع الرياض الصحي الثاني"
-TOTAL_AUDIT_ITEMS = 39
+TOTAL_AUDIT_ITEMS = 38
 NEAR_EXPIRY_ITEM_ID = 39
 NEAR_EXPIRY_SECTION = "محور مخزن الأدوية"
 NEAR_EXPIRY_MAX_ITEMS = 30
