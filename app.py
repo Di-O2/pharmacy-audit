@@ -816,20 +816,17 @@ if st.session_state.issue_report_now:
             r["near_expiry_items"] = near_expiry_items
             r["notes"] = formatted_near_notes
 
+    # حصر التقييم وحساب النقاط على أول 38 بنداً فقط وعزل البند 39 اللوجستي
     total_score = 0.0
     matched_cnt = 0
     partial_cnt = 0
     unmatched_cnt = 0
 
     for r in responses:
-        st_val = r["status"]
-        if r["id"] == NEAR_EXPIRY_ITEM_ID:
-            if st_val == "لا يوجد":
-                total_score += 1.0
-                matched_cnt += 1
-            else:
-                unmatched_cnt += 1
-            continue
+        item_id = int(r["id"])
+        if item_id == NEAR_EXPIRY_ITEM_ID:
+            continue  # استبعاد تام من معادلة الدرجات والعدادات
+        st_val = r.get("status")
         if st_val == "مطابق":
             total_score += 1.0
             matched_cnt += 1
@@ -839,7 +836,10 @@ if st.session_state.issue_report_now:
         else:
             unmatched_cnt += 1
 
-    compliance_rate = (total_score / TOTAL_AUDIT_ITEMS) * 100
+    # حساب النسبة المئوية الدقيقة من أصل 38 مع سقف أقصى 100%
+    raw_rate = (total_score / TOTAL_AUDIT_ITEMS) * 100 if TOTAL_AUDIT_ITEMS > 0 else 0.0
+    compliance_rate = min(raw_rate, 100.0)
+
     display_center = center_name if center_name.strip() else "غير محدد"
     display_inspector = inspector_name if inspector_name.strip() else "غير محدد"
     current_saudi_time = datetime.now(saudi_tz)
@@ -869,13 +869,6 @@ if st.session_state.issue_report_now:
             "matched": sum(1 for r in responses[30:38] if r["status"] == "مطابق"),
             "partial": sum(1 for r in responses[30:38] if r["status"] == "جزئي"),
             "unmatched": sum(1 for r in responses[30:38] if r["status"] in ["غير مطابق", None]),
-        },
-        "axis5": {
-            "name": NEAR_EXPIRY_SECTION,
-            "total": 1,
-            "matched": sum(1 for r in responses[38:39] if r["status"] == "لا يوجد"),
-            "partial": 0,
-            "unmatched": sum(1 for r in responses[38:39] if r["status"] in ["يوجد", None]),
         },
     }
 
@@ -931,7 +924,7 @@ if st.session_state.issue_report_now:
     m4.metric("📈 نسبة الامتثال الإجمالية", f"{compliance_rate:.2f}%")
 
     c1, c2, c3 = st.columns(3)
-    c1.success(f"✅ مطابق: {matched_cnt}")
+    c1.success(f"✅ مطابق: {matched_cnt} من أصل {TOTAL_AUDIT_ITEMS}")
     c2.warning(f"⚠️ جزئي: {partial_cnt}")
     c3.error(f"❌ غير مطابق / لم يحدد: {unmatched_cnt}")
 
@@ -953,6 +946,7 @@ if st.session_state.issue_report_now:
             table {{ width: 100%; border-collapse: collapse; margin-top: 10px; }}
             th, td {{ border: 1px solid #ddd; padding: 8px; text-align: right; }}
             th {{ background-color: #f2f2f2; }}
+            .info {{ color: #1e7596; font-weight: bold; }}
             .warning {{ color: #d35400; font-weight: bold; }}
             .danger {{ color: #c0392b; font-weight: bold; }}
             .print-btn {{ background-color: #1e3e62; color: white; border: none; padding: 10px 20px; font-size: 16px; border-radius: 8px; cursor: pointer; margin-bottom: 15px; }}
@@ -976,15 +970,18 @@ if st.session_state.issue_report_now:
         sec_responses = [r for r in responses if r["section"] == sec_name]
         for it in sec_responses:
             st_text = it["status"] if it["status"] else "غير محدد"
-            status_class = (
-                "warning"
-                if st_text == "جزئي"
-                else (
-                    "danger"
-                    if st_text in ["غير مطابق", "غير محدد", "يوجد"]
-                    else ""
+            if it["id"] == NEAR_EXPIRY_ITEM_ID:
+                status_class = "info"
+            else:
+                status_class = (
+                    "warning"
+                    if st_text == "جزئي"
+                    else (
+                        "danger"
+                        if st_text in ["غير مطابق", "غير محدد"]
+                        else ""
+                    )
                 )
-            )
             html_report += f"<tr><td>{it['id']}</td><td>{it['criterion']}</td><td class='{status_class}'>{st_text}</td><td>{it['notes']}</td></tr>"
             if it["id"] == NEAR_EXPIRY_ITEM_ID and it.get("near_expiry_items"):
                 html_report += (
