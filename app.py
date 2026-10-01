@@ -46,7 +46,6 @@ saudi_now = datetime.now(saudi_tz)
 
 GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyP4fuoXF_VFeeEaOQV3DaGZO0XGsKVDiOxvPrGG5Q0wk0RpbHaNvSX4PSEDZIxWXGb/exec"
 SPREADSHEET_ID = "1QBq_OUsbNsc3lklC8_tvFAygRhlaT7MKZ6yMyiyLkNw"
-
 # ==========================================
 # 2. خط Cairo وإخفاء شوائب Streamlit وتحسين الكاردات
 # ==========================================
